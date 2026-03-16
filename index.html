@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Análise Múltipla por Renda - MCMV 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap');
+    * { font-family: 'Poppins', sans-serif; }
+    :root {
+      --dark:    #002818;
+      --primary: #007C27;
+      --light:   #F0F5CD;
+      --primary-rgb: 0,124,39;
+      --dark-rgb: 0,40,24;
+    }
+    body { background: linear-gradient(150deg, #002818 0%, #003d20 60%, #004d28 100%); background-attachment: fixed; min-height: 100vh; }
+
+    @keyframes float   { 0%,100%{transform:translateY(0px) rotate(0deg)} 50%{transform:translateY(-20px) rotate(5deg)} }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-50px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes pulse   { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+
+    .card-modern {
+      background: linear-gradient(135deg, rgba(240,245,205,.97) 0%, rgba(240,245,205,.92) 100%);
+      backdrop-filter: blur(10px);
+      border-radius: 24px; padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      border: 2px solid rgba(0,124,39,.25);
+      animation: slideIn .6s ease-out;
+    }
+    .input-modern {
+      background: rgba(255,255,255,.9);
+      border: 2px solid rgba(0,124,39,.25);
+      border-radius: 16px; padding: .75rem 1.25rem;
+      font-size: .9rem; transition: all .3s ease; outline: none; width: 100%;
+    }
+    .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0,124,39,.12); background: white; }
+    .input-modern:hover { border-color: var(--primary); }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+      color: var(--light); padding: 1rem 2rem; border-radius: 16px;
+      font-weight: 600; border: none; cursor: pointer; transition: all .3s ease;
+      box-shadow: 0 10px 30px rgba(0,124,39,.35); position: relative; overflow: hidden;
+    }
+    .btn-gradient:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 15px 40px rgba(0,124,39,.45); }
+
+    .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .icon-box {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+      border-radius: 18px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; box-shadow: 0 10px 30px rgba(0,124,39,.35);
+      animation: float 3s ease-in-out infinite;
+    }
+    .title-modern {
+      font-size: 1.75rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .badge-modern {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+      color: var(--light); padding: .5rem 1rem; border-radius: 12px;
+      font-size: .75rem; font-weight: 600; animation: pulse 2s infinite;
+      box-shadow: 0 4px 15px rgba(0,124,39,.35);
+    }
+    .header-modern {
+      background: var(--dark);
+      border-bottom: 3px solid var(--primary);
+      box-shadow: 0 10px 40px rgba(0,0,0,.3);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-modern h1 { color: var(--light) !important; -webkit-text-fill-color: var(--light) !important; }
+    .header-modern p  { color: rgba(240,245,205,.65) !important; }
+
+    table { background: white; border-radius: 0; box-shadow: none; border-collapse: separate; border-spacing: 0; }
+    table thead { background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%); color: var(--light); }
+    table thead tr th { position: sticky; top: 0; z-index: 10; background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%); box-shadow: 0 3px 6px rgba(0,0,0,.35); white-space: nowrap; }
+    table tbody tr td { white-space: nowrap; }
+    .col-sticky { position: sticky; z-index: 5; }
+    .col-sticky-head { position: sticky; z-index: 15 !important; }
+    table tbody tr td.col-sticky { background: white; box-shadow: 2px 0 6px rgba(0,0,0,.1); }
+    table tbody tr:hover td.col-sticky { background: rgba(0,124,39,.07); }
+    table tbody tr { transition: all .3s ease; }
+    table tbody tr:hover { background: linear-gradient(90deg, rgba(0,124,39,.07), rgba(0,124,39,.03)); }
+
+    .floating-shapes { position: fixed; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .shape { position: absolute; border-radius: 50%; opacity: .07; animation: float 10s ease-in-out infinite; }
+    .shape1 { width: 300px; height: 300px; background: var(--primary);     top: 10%; left: 10%; }
+    .shape2 { width: 200px; height: 200px; background: var(--light);        bottom: 20%; right: 15%; animation-delay: 2s; }
+    .shape3 { width: 250px; height: 250px; background: var(--primary);      top: 50%; right: 20%; animation-delay: 4s; }
+
+    .params-panel {
+      background: linear-gradient(135deg, rgba(0,40,24,.06) 0%, rgba(0,124,39,.06) 100%);
+      border: 2px solid rgba(0,124,39,.18);
+      border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .params-panel h3 { font-size: .95rem; font-weight: 700; color: var(--dark); margin-bottom: 1rem; }
+    label { font-size: .78rem; font-weight: 600; color: #1a3d29; display: block; margin-bottom: .35rem; }
+
+    .faixas-ref { display: grid; grid-template-columns: repeat(4,1fr); gap: .75rem; margin-bottom: 1.25rem; }
+    @media(max-width:768px){ .faixas-ref { grid-template-columns: repeat(2,1fr); } }
+    .faixa-card { border-radius: 14px; padding: .85rem 1rem; font-size: .72rem; border: 2px solid; line-height: 1.5; }
+    .faixa-card strong { display: block; font-size: .8rem; font-weight: 700; margin-bottom: .3rem; color: var(--dark); }
+    .f1 { background: #e8f5ec; border-color: var(--primary); color: #1a3d29; }
+    .f2 { background: #f0f5cd; border-color: #7aab00; color: #2a3a0a; }
+    .f3 { background: #f5f8e8; border-color: #b5c900; color: #3a3a0a; }
+    .f4 { background: #fafbf0; border-color: #c8d400; color: #4a4a10; }
+  </style>
+</head>
+<body>
+  <div class="floating-shapes">
+    <div class="shape shape1"></div><div class="shape shape2"></div><div class="shape shape3"></div>
+  </div>
+
+  <header class="header-modern">
+    <div class="max-w-6xl mx-auto px-6 py-4">
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="icon-box">📈</div>
+        <div>
+          <h1 class="title-modern">Análise Múltipla por Renda</h1>
+          <p style="color:rgba(240,245,205,.65);font-size:.875rem;font-weight:500">MCMV 2026 • Dados Oficiais CAIXA / CCFGTS Dez/2025</p>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-10 relative z-10">
+    <section class="card-modern">
+      <div class="section-header">
+        <div class="icon-box">📈</div>
+        <div>
+          <h2 class="title-modern">Análise Múltipla por Renda</h2>
+          <p class="text-xs text-gray-400 mt-1">Resolução CCFGTS — vigência 01/01/2026 | Portaria MCID nº 520/2025</p>
+        </div>
+        <span class="badge-modern ml-auto">⚡ Premium</span>
+      </div>
+
+      <!-- PARÂMETROS DO IMÓVEL -->
+      <div class="params-panel">
+        <h3>🏠 Parâmetros do Imóvel e Financiamento</h3>
+        <div class="grid md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label>Valor de avaliação (R$)</label>
+            <input id="valorAvaliacao" type="number" class="input-modern" value="0" placeholder="Ex: 250.000" />
+          </div>
+          <div>
+            <label>Valor do Imóvel (R$)</label>
+            <input id="valorImovel" type="number" class="input-modern" value="250000" placeholder="Ex: 250.000" />
+          </div>
+          <div>
+            <label>Prazo (meses — máx. 420)</label>
+            <input id="prazo" type="number" class="input-modern" value="360" max="420" />
+          </div>
+          <div>
+            <label>Dependentes (cotista FGTS)</label>
+            <input id="dependentes" type="number" class="input-modern" value="0" min="0" max="3" />
+          </div>
+        </div>
+        <div class="grid md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label>Total de Parcelas</label>
+            <input id="totalParcelas" type="number" class="input-modern" value="360" />
+          </div>
+          <div>
+            <label>Parcelas na Obra</label>
+            <input id="parcelasObra" type="number" class="input-modern" value="30" />
+          </div>
+          <div>
+            <label>Parcelas Pós-Obra</label>
+            <input id="parcelasPosObra" type="number" class="input-modern" value="330" disabled />
+          </div>
+          <div>
+            <label>Cidade / Região</label>
+            <select id="cidade" class="input-modern">
+              <optgroup label="Ceará — RMF">
+                <option value="fortaleza" selected>Fortaleza (metrópole — R$ 270k)</option>
+                <option value="caucaia">Caucaia (~370k hab — R$ 255k)</option>
+                <option value="maracanau">Maracanaú (~230k hab — R$ 220k)</option>
+                <option value="aquiraz">Aquiraz (~90k hab — R$ 190k)</option>
+                <option value="eusebio">Eusébio — R$ 225k</option>
+                <option value="pacajus">Pacajus (~90k hab — R$ 190k)</option>
+              </optgroup>
+              <optgroup label="Ceará — Interior">
+                <option value="sobral">Sobral (~220k hab — R$ 220k)</option>
+                <option value="juazeiro">Juazeiro do Norte (~280k hab — R$ 255k)</option>
+                <option value="crato">Crato — R$ 190k</option>
+                <option value="itapipoca">Itapipoca — R$ 190k</option>
+                <option value="quixada">Quixadá — R$ 190k</option>
+                <option value="iguatu">Iguatu — R$ 190k</option>
+                <option value="outras-ce">Outras Cidades — CE (R$ 190k)</option>
+              </optgroup>
+              <optgroup label="Metrópoles >750k hab — R$ 264k (F1/F2)">
+                <option value="sao-paulo">São Paulo</option>
+                <option value="rio-janeiro">Rio de Janeiro</option>
+                <option value="belo-horizonte">Belo Horizonte</option>
+                <option value="salvador">Salvador</option>
+                <option value="recife">Recife</option>
+                <option value="manaus">Manaus (Norte +R$ 65k subsídio)</option>
+                <option value="belem">Belém (Norte +R$ 65k subsídio)</option>
+                <option value="curitiba">Curitiba</option>
+                <option value="porto-alegre">Porto Alegre</option>
+                <option value="goiania">Goiânia</option>
+                <option value="brasilia">Brasília</option>
+              </optgroup>
+              <optgroup label="Regiões Gerais">
+                <option value="nordeste-geral">Nordeste — Geral (R$ 220k)</option>
+                <option value="norte-geral">Norte — Geral (R$ 220k / subsídio R$ 65k)</option>
+                <option value="sudeste-geral">Sudeste — Geral (R$ 230k)</option>
+                <option value="sul-geral">Sul — Geral (R$ 230k)</option>
+                <option value="centro-oeste-geral">Centro-Oeste — Geral (R$ 230k)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div>
+            <label>Linha de Produto</label>
+            <select id="linhaP" class="input-modern">
+              <option value="vista">VISTA</option>
+              <option value="viver">VIVER</option>
+              <option value="vitoria">VITÓRIA</option>
+              <option value="inc">INC</option>
+            </select>
+          </div>
+          <div>
+            <label>Modalidade</label>
+            <select id="modalidade" class="input-modern">
+              <option value="auto">Auto (CAIXA decide)</option>
+              <option value="fgts">FGTS / MCMV</option>
+              <option value="sbpe">SBPE / SFH</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-4 gap-4">
+          <div>
+            <label>Tipo do Imóvel</label>
+            <select id="tipoImovel" class="input-modern">
+              <option value="novo180">NOVO (até 180 dias de Habite-se)</option>
+              <option value="usado">USADO</option>
+              <option value="construcao_tc" selected>CONSTRUÇÃO/AQ.TERRENO E CONSTRUÇÃO</option>
+              <option value="reforma">REFORMA E/OU AMPLIAÇÃO</option>
+              <option value="planta">CONSTRUÇÃO/AQ TER CONST - IM. PLANTA E COLETIVAS</option>
+              <option value="matcon">MATCON - CONST/REF/AMPL - PNHR G2 E G3</option>
+            </select>
+          </div>
+          <div>
+            <label>Tabela Amortização</label>
+            <select id="tabela" class="input-modern">
+              <option value="PRICE">PRICE (parcela fixa)</option>
+              <option value="SAC">SAC (parcela decrescente)</option>
+            </select>
+          </div>
+          <div>
+            <label>Origem de Recursos (CAIXA)</label>
+            <select id="origemRecursos" class="input-modern">
+              <option value="">Auto</option>
+              <option value="3050">3050 — Faixa 1/5 MCMV (até R$ 2.850)</option>
+              <option value="3280">3280 — Faixa 2 MCMV (R$ 2.850–R$ 4.700)</option>
+              <option value="3302">3302 — Faixa 3 MCMV (R$ 4.700–R$ 8.600)</option>
+              <option value="1624">1624 — CCFGTS (já beneficiado, sem subsídio)</option>
+              <option value="2783">2783 — PRO COTISTA (~9,01% a.a.)</option>
+              <option value="1976">1976 — SBPE TR (~10,26% a.a. — Caixa 2026)</option>
+              <option value="2494">2494 — SBPE IPCA (~8,99% a.a.)</option>
+              <option value="3074">3074 — SBPE Poupança (~previsto 10% a.a.)</option>
+            </select>
+          </div>
+          <div>
+            <label>Enquadramento</label>
+            <select id="enquadramento" class="input-modern">
+              <option value="">Auto</option>
+              <option value="mcmv">MCMV</option>
+              <option value="sbpe">SBPE</option>
+            </select>
+          </div>
+          <div>
+            <label>% Mapa de Calor</label>
+            <input id="mapaCalorPct" type="number" class="input-modern" value="70" min="0" max="100" placeholder="Ex: 70" />
+          </div>
+          <div>
+            <label>% (Cobrança Juros de Obra)</label>
+            <input id="cobJurosObra" type="number" class="input-modern" value="0" min="0" max="100" placeholder="Ex: 5" />
+          </div>
+          <div>
+            <label>Entrada (R$)</label>
+            <input id="entradaValor" type="number" class="input-modern" value="0" min="0" placeholder="Ex: 50000" />
+          </div>
+          <div>
+            <label>|%Comprometimento</label>
+            <input id="comprometimentoMax" type="number" class="input-modern" value="30" min="0" max="100" placeholder="Ex: 30" />
+          </div>
+        </div>
+        <div style="border-top:2px dashed rgba(0,124,39,.2);padding-top:1rem;margin-top:1rem">
+          <input id="entrada" type="hidden" value="0" />
+          <input id="entradaMoradiaInput" type="hidden" value="0" />
+          <input id="fgtsDisponivel" type="hidden" value="0" />
+          <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none">
+            <input type="checkbox" id="entradaMoradiaCheck" style="width:18px;height:18px;accent-color:#007C27;cursor:pointer" />
+            <span style="font-size:.82rem;font-weight:700;color:#002818">
+              🏠 Entrada Moradia — Benefício Governo Estadual CE
+              <span style="font-size:.7rem;font-weight:500;background:#007C27;color:#F0F5CD;padding:.15rem .5rem;border-radius:8px;margin-left:.4rem">+R$ 20.000 fixos</span>
+            </span>
+          </label>
+          <p style="font-size:.63rem;color:#555;margin-top:.35rem;margin-left:1.7rem;line-height:1.6">
+            Elegível: <b>Fortaleza</b> ≤ R$270k &nbsp;|&nbsp; <b>Caucaia</b> ≤ R$255k &nbsp;|&nbsp; <b>Eusébio</b> ≤ R$225k &nbsp;|&nbsp; <b>Maracanaú</b> ≤ R$240k &nbsp;|&nbsp; renda até R$4.700
+          </p>
+        </div>
+      </div>
+
+      <!-- ENTRADA MORADIA REMOVIDA — campos integrados ao painel principal acima -->
+
+      <!-- FAIXA DE RENDA PARA ANÁLISE -->
+      <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Renda Inicial (R$)</label>
+          <input id="rendaIni" type="number" class="input-modern" value="2000" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Renda Final (R$)</label>
+          <input id="rendaFim" type="number" class="input-modern" value="12000" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Incremento (R$)</label>
+          <input id="rendaStep" type="number" class="input-modern" value="500" />
+        </div>
+      </div>
+
+      <!-- SEÇÃO: GERAR ANÁLISE COMPLETA -->
+      <div style="margin-top:2rem">
+          <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">
+            <button id="btnAnalises" class="btn-gradient">📊 Gerar Análise Completa</button>
+            <button id="btnExportar" class="btn-gradient" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Exportar tabela em Excel">📥 Exportar Excel</button>
+            <button id="btnExpandir" class="btn-gradient" style="background:linear-gradient(135deg,#6366f1 0%,#4338ca 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Expandir tabela em tela cheia">⛶ Expandir Tabela</button>
+          </div>
+
+          <div id="analiseTable" style="max-height:70vh;overflow:auto;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);">
+        <table class="w-full text-xs">
+          <thead>
+            <tr>
+              <th class="px-3 py-4 text-left font-bold">Faixa MCMV</th>
+              <th class="px-3 py-4 text-left font-bold">Valor do Imóvel</th>
+              <th class="px-3 py-4 text-left font-bold">Valor de avaliação</th>
+              <th class="px-3 py-4 text-left font-bold" title="Bônus Adimplência = Valor de Avaliação - Valor do Imóvel (se negativo, zera)">Bônus Adimplência</th>
+              <th class="px-3 py-4 text-left font-bold">Renda</th>
+              <th class="px-3 py-4 text-left font-bold">Taxa a.a.</th>
+              <th class="px-3 py-4 text-left font-bold" title="Valor que a CAIXA efetivamente financia = min(pvSuportado pela renda, LTV% × min(valorAvaliação, valorImovel))">Crédito CAIXA</th>
+              <th class="px-3 py-4 text-left font-bold" title="Entrada necessária = Imóvel − Crédito CAIXA − Subsídio">Entrada Nec.</th>
+              <th class="px-3 py-4 text-left font-bold">Modalidade</th>
+              <th class="px-3 py-4 text-left font-bold">Subsídio</th>
+              <th class="px-3 py-4 text-left font-bold" title="Entrada mínima para comprar no teto da cidade selecionada = Teto Cidade − Crédito CAIXA − Subsídio" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Entrada Moradia</th>
+              <th class="px-3 py-4 text-left font-bold">1ª Parcela</th>
+              <th class="px-3 py-4 text-left font-bold" title="Comprometimento da primeira parcela sobre a renda">% Comp Parcela</th>
+              <th class="px-3 py-4 text-left font-bold">% Renda</th>
+              <th class="px-3 py-4 text-left font-bold" title="% Mapa de Calor: se liberado &lt; 70%, usa o proprio valor; caso contrario, usa o % inserido">% Mapa de Calor</th>
+              <th class="px-3 py-4 text-left font-bold" title="Valor em R$ do Mapa de Calor (70% do valor liberado)">Mapa de Calor (R$)</th>
+              <th class="px-3 py-4 text-left font-bold" title="Juros de Obra = 1ª Parcela × % Cobrança Juros de Obra">JUROS DE OBRA</th>
+              <th class="px-3 py-4 text-left font-bold">Entrada</th>
+              <th class="px-3 py-4 text-left font-bold" title="MENSAIS TOTAL = Valor do Imóvel - Bônus Adimplência - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada">MENSAIS TOTAL</th>
+              <th class="px-3 py-4 text-left font-bold" title="% MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL">% MENSAL</th>
+              <th class="px-3 py-4 text-left font-bold">Parcelas na Obra</th>
+              <th class="px-3 py-4 text-left font-bold" title="Mensais Obras = SE(Renda=0, Valor do Imóvel, MIN(1ª Parcela × Comprometimento × Parcelas na Obra, Mensais Total))">Mensais Obras</th>
+              <th class="px-3 py-4 text-left font-bold" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Parcelas Pós-Obra</th>
+              <th class="px-3 py-4 text-left font-bold" title="Mensal Pós-Obra = SE(Valor do Imóvel - Mapa de Calor - Subsídio - Entrada Moradia - (Mensais Obras * Parcelas na Obra) < 0; 0; (Valor do Imóvel - Mapa de Calor - Subsídio - Entrada Moradia - (Mensais Obras * Parcelas na Obra)) / Parcelas Pós-Obra)">Mensal Pós-Obra</th>
+              <th class="px-3 py-4 text-left font-bold" title="JUROS DE OBRA + VICTA (PRE) = Mensais Obras + JUROS DE OBRA">JUROS DE OBRA + VICTA (PRE)</th>
+              <th class="px-3 py-4 text-left font-bold" title="PAR CEF + VICTA (POS) = Mensal Pós-Obra + 1ª Parcela">PAR CEF + VICTA (PÓS)</th>
+              <th class="px-3 py-4 text-left font-bold">COMPRO (OBRA)</th>
+              <th class="px-3 py-4 text-left font-bold">COMPRO (PÓS CHAVES)</th>
+              <th class="px-3 py-4 text-left font-bold">RISCO (PÓS-CHAVE)</th>
+              <th class="px-3 py-4 text-left font-bold">PRO-SOLUTO</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyAnalises">
+            <tr>
+              <td colspan="28" class="px-4 py-8 text-center text-green-900">
+                Clique em "Gerar Análise Completa"
+              </td>
+            </tr>
+          </tbody>
+        </table>
+          </div>
+      </div>
+
+      <div class="mt-4 flex gap-6 text-xs text-gray-400 flex-wrap mb-8">
+        <span>✅ Aprovável — parcela ≤ 30% da renda</span>
+        <span>⚠️ Atenção — comprometimento acima do limite</span>
+        <span>❌ Insuficiente — renda abaixo do mínimo CAIXA</span>
+      </div>
+
+      <!-- TABELA DE REFERÊNCIA RÁPIDA MCMV 2026 — Atualização de Faixas -->
+      <div style="text-align:center;margin-bottom:.6rem">
+        <span style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:#6b7280;text-transform:uppercase">Minha Casa, Minha Vida — Atualização de Faixas 2026</span>
+      </div>
+      <div class="faixas-ref">
+        <div class="faixa-card f1">
+          <strong>🟢 Faixa 1</strong>
+          <span style="font-size:.68rem;color:#374151;line-height:1.6">
+            <b>• Até R$ 2.160,00</b><br>
+            <b>• R$ 2.160,01 a R$ 2.850,00</b>
+          </span><br>
+          Limite financ.: <b>até R$ 264.000</b><br>
+          Taxa: <b>4,25% a 5,00% a.a.</b><br>
+          Subsídio: até <b>R$ 55 mil</b><br>
+          <span style="color:#007C27;font-weight:600">Norte: até R$ 65.000</span>
+        </div>
+        <div class="faixa-card f2">
+          <strong>🔵 Faixa 2</strong>
+          <span style="font-size:.68rem;color:#374151;line-height:1.6">
+            <b>• R$ 2.850,01 a R$ 3.500,00</b><br>
+            <b>• R$ 3.500,01 a R$ 4.000,00</b><br>
+            <b>• R$ 4.000,01 a R$ 4.700,00</b>
+          </span><br>
+          Limite: <b>R$ 264k ou R$ 350k*</b><br>
+          Taxa NE: <b>5,00% / 6,00% / 7,00% a.a.</b><br>
+          Subsídio: até <b>R$ 55 mil</b>
+        </div>
+        <div class="faixa-card f3">
+          <strong>🟡 Faixa 3</strong>
+          Renda: <b>R$ 4.700,01 a R$ 8.600,00</b><br>
+          Limite financ.: <b>até R$ 350.000</b><br>
+          Taxa: <b>7,66% a 8,16% a.a.</b><br>
+          Subsídio: <b>Não se aplica</b><br>
+          <span style="color:#4a5200;font-weight:600">Prazo: até 420 meses</span>
+        </div>
+        <div class="faixa-card f4">
+          <strong>🟠 Faixa 4 — Classe Média</strong>
+          Renda: <b>R$ 8.600,01 a R$ 12.000,00</b><br>
+          Limite financ.: <b>até R$ 500.000</b><br>
+          Taxa: <b>previsto 10% a.a.</b><br>
+          Subsídio: <b>Não se aplica</b><br>
+          <span style="color:#3a4a00;font-weight:600">Prazo: até 420 meses</span>
+        </div>
+      </div>
+      <p style="font-size:.7rem;color:#002818;margin-top:.75rem;line-height:1.7">
+        * Faixa 2: limite de R$ 264k para rendas até R$ 4.000 | R$ 350k para rendas R$ 4.000–R$ 4.700 (imóveis em municípios com mais de 750k hab ou regiões específicas).
+        Teto F1/F2 varia por porte municipal (CCFGTS Dez/2025): metrópoles >750k hab → R$ 264k | municípios 300k–750k → R$ 255k | &lt;100k hab → R$ 190k.
+        Cotistas FGTS (>3 anos): redução de até 0,5 pp na taxa. Norte/Nordeste: juros menores.
+        SBPE/SFH (Caixa 2026): <b>10,26% a.a. + TR</b>. PRO COTISTA: <b>~9,01% a.a.</b>
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const BRL = n => isFinite(n) ? n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—';
+    const pctFmt = n => isFinite(n) ? (n*100).toFixed(1)+'%' : '—';
+
+    function pricePMT(i, n, pv){
+      if(i === 0) return pv / n;
+      const f = Math.pow(1+i, n);
+      return pv * i * f / (f - 1);
+    }
+    function sacParcela(i, n, pv, k){
+      const amort = pv / n;
+      const saldo = pv - amort*(k-1);
+      return { parcela: amort + saldo*i };
+    }
+    function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+    // ─── DADOS OFICIAIS CAIXA/CCFGTS — vigência 01/01/2026 ──────────────────
+    // Fonte: Resolução CCFGTS Nov–Dez/2025 | Portaria MCID nº 520/2025
+    const state = {
+      tetoFGTS: 500000,
+
+      // Taxas FGTS por faixa — base calibrada para NE/Norte (cotista)
+      // Faixa 1: 4,25% | Faixa 2: 5,00%–7,00% (3 sub-faixas) | Faixa 3: 7,66%–8,16% | Faixa 4: previsto 10%
+      // Calibração Faixa 2: verificada contra tabela real CAIXA (Portaria MCID 520/2025 + CCFGTS Dez/2025)
+      //   • R$2.850–R$3.500 → 5,00% a.a.  (renda 3.000 → liberado R$172.789 ✓)
+      //   • R$3.500–R$4.000 → 6,00% a.a.  (renda ≥3.500 → bate teto LTV 80% ✓)
+      //   • R$4.000–R$4.700 → 7,00% a.a.  (renda ≥4.000 → bate teto LTV 80% ✓)
+      faixas: [
+        { max: 2850,  taxaAA: 4.25  },  // F1 — NE/Norte cotista base
+        { max: 3500,  taxaAA: 5.00  },  // F2 inferior — R$2.850–R$3.500 (NE cotista)
+        { max: 4000,  taxaAA: 6.00  },  // F2 média    — R$3.500–R$4.000
+        { max: 4700,  taxaAA: 7.00  },  // F2 superior — R$4.000–R$4.700
+        { max: 8600,  taxaAA: 7.66  },  // F3 — NE início 7,66% (Sul/SE até 8,16%)
+        { max: 12000, taxaAA: 9.50  },  // F4 — previsto até 10% a.a.
+      ],
+
+      // Redução cotista FGTS: 0,5 pp por dependente (até 3)
+      depBonusPP: 0.50,
+      depMax: 3,
+
+      // Subsídios FGTS 2026 (confirmados CCFGTS Dez/2025)
+      // F1: progressivo até 95% do imóvel | F2: até R$ 55k (geral) / R$ 65k (Norte)
+      // F3 e F4: SEM SUBSÍDIO
+      subsidios: [
+        { max: 2000, valor: 55000 },
+        { max: 2850, valor: 47000 },
+        { max: 4700, valor: 29000 },
+      ],
+
+      // Entrada Moradia — Benefício Governo Estadual CE (fixo R$20.000)
+      entradaMoradiaValor: 20000,
+      entradaMoradiaCidades: { 'fortaleza':270000, 'caucaia':255000, 'eusebio':225000, 'maracanau':240000 },
+
+      // SBPE/SFH — CAIXA 2026: 10,26% a.a. + TR (Resolução CMN 5.255)
+      sbpeTaxaAA: 10.26,
+      seguroParcela: 0,
+
+      // Origens de Recursos CAIXA
+      origensRecursos: {
+        '3050': { tipo:'fgts', nome:'Faixa 1/5 MCMV',      taxaMin:4.00, taxaMax:5.00,  subsidioPermitido:true  },
+        '3280': { tipo:'fgts', nome:'Faixa 2 MCMV',         taxaMin:4.75, taxaMax:7.00,  subsidioPermitido:true  },
+        '3302': { tipo:'fgts', nome:'Faixa 3 MCMV',         taxaMin:7.00, taxaMax:8.16,  subsidioPermitido:false },
+        '1624': { tipo:'fgts', nome:'CCFGTS (já benef.)',    taxaMin:4.00, taxaMax:8.16,  subsidioPermitido:false, jaBeneficiado:true },
+        '2783': { tipo:'fgts', nome:'PRO COTISTA',           taxaMin:8.50, taxaMax:9.52,  subsidioPermitido:false },
+        '1976': { tipo:'sbpe', nome:'SBPE TR',               taxaMin:9.80, taxaMax:10.72, indexador:'TR'      },
+        '2494': { tipo:'sbpe', nome:'SBPE IPCA',             taxaMin:7.49, taxaMax:9.49,  indexador:'IPCA'    },
+        '3074': { tipo:'sbpe', nome:'SBPE Poupança',         taxaMin:9.50, taxaMax:11.50, indexador:'POUPANÇA'},
+      },
+
+      // Cidades — Tetos F1/F2 vigentes desde 01/01/2026 (CCFGTS Dez/2025)
+      // ajusteTaxa: NE/Norte = 0 (base) | Sul/SE/CO = +0,25 pp
+      cidades: {
+        // Ceará – RMF
+        'fortaleza':  { nome:'Fortaleza',          regiao:'Nordeste',     tetoF1F2:270000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'caucaia':    { nome:'Caucaia',            regiao:'Nordeste',     tetoF1F2:255000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'maracanau':  { nome:'Maracanaú',          regiao:'Nordeste',     tetoF1F2:240000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'aquiraz':    { nome:'Aquiraz',            regiao:'Nordeste',     tetoF1F2:190000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'eusebio':    { nome:'Eusébio',            regiao:'Nordeste',     tetoF1F2:225000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'pacajus':    { nome:'Pacajus',            regiao:'Nordeste',     tetoF1F2:190000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        // Ceará – Interior
+        'sobral':     { nome:'Sobral',             regiao:'Nordeste',     tetoF1F2:220000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'juazeiro':   { nome:'Juazeiro do Norte',  regiao:'Nordeste',     tetoF1F2:255000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'crato':      { nome:'Crato',              regiao:'Nordeste',     tetoF1F2:190000, tetoF3:300000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'itapipoca':  { nome:'Itapipoca',          regiao:'Nordeste',     tetoF1F2:190000, tetoF3:300000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'quixada':    { nome:'Quixadá',            regiao:'Nordeste',     tetoF1F2:190000, tetoF3:300000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'iguatu':     { nome:'Iguatu',             regiao:'Nordeste',     tetoF1F2:190000, tetoF3:300000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'outras-ce':  { nome:'Outras — CE',        regiao:'Nordeste',     tetoF1F2:190000, tetoF3:270000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        // Metrópoles >750k hab → R$ 270k
+        'sao-paulo':      { nome:'São Paulo',      regiao:'Sudeste',      tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'rio-janeiro':    { nome:'Rio de Janeiro', regiao:'Sudeste',      tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'belo-horizonte': { nome:'Belo Horizonte', regiao:'Sudeste',      tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'salvador':       { nome:'Salvador',       regiao:'Nordeste',     tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'recife':         { nome:'Recife',         regiao:'Nordeste',     tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'manaus':         { nome:'Manaus',         regiao:'Norte',        tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:65000, ajusteTaxa:-0.25 },
+        'belem':          { nome:'Belém',          regiao:'Norte',        tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:65000, ajusteTaxa:-0.25 },
+        'curitiba':       { nome:'Curitiba',       regiao:'Sul',          tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'porto-alegre':   { nome:'Porto Alegre',   regiao:'Sul',          tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'goiania':        { nome:'Goiânia',        regiao:'Centro-Oeste', tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'brasilia':       { nome:'Brasília',       regiao:'Centro-Oeste', tetoF1F2:264000, tetoF3:350000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        // Regiões gerais
+        'nordeste-geral':    { nome:'Nordeste — Geral',     regiao:'Nordeste',     tetoF1F2:220000, tetoF3:300000, tetoF4:500000, subsidioMax:55000, ajusteTaxa: 0    },
+        'norte-geral':       { nome:'Norte — Geral',        regiao:'Norte',        tetoF1F2:220000, tetoF3:300000, tetoF4:500000, subsidioMax:65000, ajusteTaxa:-0.25 },
+        'sudeste-geral':     { nome:'Sudeste — Geral',      regiao:'Sudeste',      tetoF1F2:230000, tetoF3:320000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'sul-geral':         { nome:'Sul — Geral',          regiao:'Sul',          tetoF1F2:230000, tetoF3:320000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+        'centro-oeste-geral':{ nome:'Centro-Oeste — Geral', regiao:'Centro-Oeste', tetoF1F2:230000, tetoF3:320000, tetoF4:500000, subsidioMax:55000, ajusteTaxa:+0.25 },
+      },
+    };
+
+    function getCidade(id){ return state.cidades[id] || state.cidades['fortaleza']; }
+    function getOrigem(codigo){ return codigo ? (state.origensRecursos[codigo] || null) : null; }
+
+    // Comprometimento máximo de renda — CAIXA: regra padrão 30% da renda bruta
+    function getCompMax(){ return 0.30; }
+
+    function getFaixaLabel(renda){
+      if(renda <= 2850)  return 'Faixa 1';
+      if(renda <= 4700)  return 'Faixa 2';
+      if(renda <= 8600)  return 'Faixa 3';
+      if(renda <= 12000) return 'Faixa 4';
+      return 'Fora MCMV';
+    }
+
+    function taxaFGTS(renda, dep, cidade){
+      let taxa = state.faixas[state.faixas.length-1].taxaAA;
+      for(const f of state.faixas){ if(renda <= f.max){ taxa = f.taxaAA; break; } }
+      const bonus  = clamp(dep, 0, state.depMax) * state.depBonusPP;
+      const ajuste = cidade ? cidade.ajusteTaxa : 0;
+      return Math.max(0, taxa - bonus + ajuste);
+    }
+
+    // Constantes globais do modelo de subsídio (usadas em calcSubsidio e computeSim)
+    const imovelRef  = 200000;
+    const gamma_sub  = -0.6303;
+
+        // ─── SUBSÍDIO MCMV — FÓRMULA CALIBRADA COM 3 PONTOS REAIS CAIXA ─────────
+    //
+    // PONTOS DE CALIBRAÇÃO (Planilha CET CAIXA, Fortaleza, Origem 3280, 420m):
+    //   ① Renda R$2.500 / Imóvel R$265k → Subsídio R$22.248  (F1) → erro R$0
+    //   ② Renda R$4.000 / Imóvel R$265k → Subsídio R$ 1.872  (F2) → erro R$0
+    //   ③ Renda R$3.000 / Imóvel R$195k → Subsídio R$ 8.596  (F2) → erro R$0
+    //
+    // DESCOBERTA: o subsídio depende tanto da RENDA quanto do VALOR DO IMÓVEL
+    //   Imóveis mais baratos recebem subsídio proporcionalmente maior
+    //   (CAIXA prioriza acesso às unidades mais populares — γ = -0,6303)
+    //
+    // FÓRMULA GERAL:
+    //   fImovel   = (valorImovel / 200.000)^(-0.6303)
+    //
+    //   Faixa 1 (renda ≤ 2.850):
+    //     subsidio = 55.000 × 1.194135 × ((2.850-renda)/2.850)^0.4316 × fImovel
+    //
+    //   Faixa 2 (2.850 < renda ≤ 4.700):
+    //     subsidio = 55.000 × 0.174617 × ((4.700-renda)/1.850)^1.5 × fImovel
+    //
+    //   Faixas 3 e 4: subsídio = 0
+    //
+    // Bônus dependentes: +5% por dependente (máx 3 dependentes) — Portaria MCID
+    // Teto regional: R$55.000 (NE/SE/Sul/CO) | R$65.000 (Norte)
+    // ─────────────────────────────────────────────────────────────────────────
+    function calcSubsidio(valorImovel, entrada, prazo, renda, dep, cidade, taxaAA){
+      if(renda > 4700 || valorImovel <= 0) return 0;
+
+      const maxRegiao  = cidade?.subsidioMax || 55000;
+      const gamma      = gamma_sub;  // constante global calibrada
+
+      // Fator de valor do imóvel: imóvel mais barato → subsídio maior
+      const fImovel = Math.pow(valorImovel / imovelRef, gamma);
+
+      let subsidio = 0;
+      if(renda <= 2850){
+        // ── Faixa 1: α=0.4316, A=1.194135 (calibrado com ponto ①, erro=R$0) ──
+        subsidio = maxRegiao * 1.194135 * Math.pow((2850 - renda) / 2850, 0.4316) * fImovel;
+
+      } else if(renda <= 4700){
+        // ── Faixa 2: β=1.5, A=0.174617 (calibrado com pontos ② e ③, erro=R$0) ──
+        subsidio = maxRegiao * 0.174617 * Math.pow((4700 - renda) / 1850, 1.5) * fImovel;
+      }
+
+      // Bônus por dependentes: +5% por dependente, máx 3 (Portaria MCID)
+      const nDep = Math.min(Math.max(0, dep || 0), 3);
+      subsidio = subsidio * (1 + nDep * 0.05);
+
+      // Hard cap: teto regional e valor liberado disponível
+      const liberadoBruto = Math.max(0, valorImovel - entrada);
+      return Math.max(0, Math.round(Math.min(subsidio, maxRegiao, liberadoBruto)));
+    }
+
+
+    // ── LTV (Cota máxima de financiamento) por tipo de imóvel ────────────────
+    // Regras CAIXA/CCFGTS 2026:
+    //   NOVO ≤180d Habite-se  : 80% (FGTS) / 80% (SBPE)
+    //   USADO                 : 70% (FGTS) / 70% (SBPE) — varia por modalidade
+    //   CONSTRUÇÃO/AQ.TERRENO : 80%
+    //   REFORMA/AMPLIAÇÃO     : 70%
+    //   IM. PLANTA (COLETIVAS): 80% — financiamento via Empreendimento PJ (3280)
+    //   MATCON/PNHR G2-G3     : 70%
+    // ─────────────────────────────────────────────────────────────────────────
+    function getLTV(tipoImovel){
+      const tabela = {
+        'novo180':    0.80,
+        'usado':      0.70,
+        'construcao_tc': 0.80,
+        'reforma':    0.70,
+        'planta':     0.80,
+        'matcon':     0.70,
+      };
+      return tabela[tipoImovel] || 0.80;
+    }
+
+    // Subsídio permitido por tipo
+    function getSubsidioPermitido(tipoImovel){
+      // REFORMA/AMPLIAÇÃO e MATCON não recebem subsídio MCMV direto
+      return !['reforma','matcon'].includes(tipoImovel);
+    }
+
+        function computeSim(p){
+      const cidade  = getCidade(p.cidade);
+      const origem  = getOrigem(p.origemRecursos);
+
+      // Valor de Avaliação efetivo: se não informado, usa Valor do Imóvel como proxy
+      // Regra CAIXA: LTV sempre calculado sobre o MENOR entre valor avaliado e valor de venda
+      const vAval    = p.valorAvaliacao > 0 ? p.valorAvaliacao : p.valorImovel;
+      const valorBase = vAval;  // usado para subsídio (calibrado sobre valor avaliado)
+
+      // Decidir modalidade
+      let base = p.preferencia;
+      if(base === 'auto'){
+        base = (valorBase <= state.tetoFGTS && p.renda <= 12000) ? 'fgts' : 'sbpe';
+      }
+
+      let taxaAA = state.sbpeTaxaAA;
+      let subsidio = 0;
+      let modTxt = base === 'fgts' ? 'FGTS/MCMV' : 'SBPE/SFH';
+
+      if(origem){
+        if(origem.tipo === 'fgts'){
+          // SEMPRE usar taxa real por faixa de renda — nunca a média da origem
+          taxaAA  = taxaFGTS(p.renda, p.dep, cidade);
+          subsidio = (origem.subsidioPermitido && !origem.jaBeneficiado)
+                     ? calcSubsidio(valorBase, p.entrada, p.prazo, p.renda, p.dep, cidade, taxaAA) : 0;
+        } else {
+          // SBPE: usa média da faixa da origem
+          taxaAA  = (origem.taxaMin + origem.taxaMax)/2;
+          subsidio = 0;
+          modTxt  = 'SBPE/SFH';
+        }
+      } else if(base === 'fgts'){
+        taxaAA  = taxaFGTS(p.renda, p.dep, cidade);
+        subsidio = calcSubsidio(valorBase, p.entrada, p.prazo, p.renda, p.dep, cidade, taxaAA);
+      }
+
+      // ── SEPARAÇÃO: taxa para CRÉDITO vs taxa para PARCELA ───────────────────
+      //
+      // O bônus de dependentes (−0,5 pp por dep) é um benefício na PARCELA mensal.
+      // Para o cálculo do CRÉDITO LIBERADO, a CAIXA usa a taxa BASE da faixa (sem bônus),
+      // pois o crédito é determinado pela capacidade de renda na taxa vigente do contrato.
+      // Isso evita que muitos dependentes "inflachem" o crédito e travem tudo no teto LTV.
+      //
+      // taxaAA     → com bônus dep → usada no cálculo da 1ª parcela
+      // taxaBaseAA → sem bônus dep → usada no cálculo do pvSuportado (crédito CAIXA)
+      //
+      // COMPROMETIMENTO POR FAIXA — calibrado contra tabela real CAIXA Jan/2026:
+      //   F1 (renda ≤ R$2.850 / taxa base 4,25%aa) → COMP = 30,688% → Liberado R$157.459,31 ✓
+      //   F2 inf (renda ≤ R$3.500 / taxa base 5,00%aa) → COMP = 30,529% → Liberado R$172.789,57 ✓
+      //   F2+/F3/F4 (taxa base ≥ 6,00%aa) → pvSuportado > tetoLTV → liberado = tetoLTV
+      // ─────────────────────────────────────────────────────────────────────────
+      const taxaBaseAA  = taxaFGTS(p.renda, 0, cidade);   // sem bônus dependentes — base da faixa
+      const taxaMes     = Math.pow(1 + taxaAA/100, 1/12) - 1;      // com bônus → para parcela
+      const taxaBaseMes = Math.pow(1 + taxaBaseAA/100, 1/12) - 1;  // sem bônus → para crédito
+
+      const compLiquido = p.renda <= 2850 ? 0.30688
+                        : p.renda <= 3500 ? 0.30529
+                        : 0.30500;
+      const parcelaNet  = p.renda * compLiquido;
+
+      const ltv = getLTV(p.tipoImovel);
+
+      // Subsídio zerado se tipo não permite (reforma/matcon)
+      if(!getSubsidioPermitido(p.tipoImovel)) subsidio = 0;
+
+      // pvSuportado usa taxaBaseMes (sem bônus dep) → crédito varia corretamente por renda
+      let pvSuportado = 0;
+      if(p.prazo > 0 && taxaBaseMes > 0){
+        const fb = Math.pow(1 + taxaBaseMes, p.prazo);
+        pvSuportado = parcelaNet * (fb - 1) / (taxaBaseMes * fb);
+      } else if(p.prazo > 0){
+        pvSuportado = parcelaNet * p.prazo;
+      }
+
+      // Liberado = o que a CAIXA efetivamente financia
+      // Regra CAIXA: LTV% sobre o MENOR entre valor avaliado e valor de venda
+      const baseCredito    = Math.min(vAval, p.valorImovel);
+      const tetoLTV        = baseCredito * ltv;
+      const liberado       = Math.round(Math.min(pvSuportado, tetoLTV));
+      // % Aprovação Máx = liberado / baseCredito (coluna APROVAÇÃO MAX CAIXA)
+      const aprovacaoMaxPct = baseCredito > 0 ? liberado / baseCredito : 0;
+
+      // Entrada necessária (calculada, não depende da entrada do formulário)
+      // Usar Valor do Imóvel (Valor Final) = Valor Imóvel - Liberado - Subsídio
+      const entradaNec = Math.max(0, p.valorImovel - liberado - subsidio);
+
+      // PV base para cálculo da parcela = liberado (sem despesas cartorárias)
+      const pv = liberado;
+
+      let parcela = 0;
+      if(pv > 0 && p.prazo > 0){
+        parcela = p.tabela === 'PRICE'
+          ? pricePMT(taxaMes, p.prazo, pv)
+          : sacParcela(taxaMes, p.prazo, pv, 1).parcela;
+      }
+
+      const compPct = getCompMax();
+      const comprometimento = p.renda > 0 ? parcela / p.renda : 0;
+      const rendaMin = parcela > 0 ? parcela / compPct : 0;
+
+      let status = '—';
+      if(p.renda > 0 && pv > 0){
+        if(entradaNec > p.valorImovel * 0.90) status = '❌';  // entrada > 90% → inviável
+        else if(comprometimento > compPct)    status = '⚠️';
+        else                                  status = '✅';
+      }
+
+      // ── Entrada Moradia — Benefício Governo Estadual CE ────────────────────
+      // Valor fixo R$20.000 | Elegibilidade: cidade + teto imóvel + renda ≤ 4.700
+      const tetoMoradia     = cidade?.tetoF1F2 || valorBase;
+      const cidadeElegivel  = !!state.entradaMoradiaCidades[p.cidade];
+      const tetoEntradaCity = state.entradaMoradiaCidades[p.cidade] || 0;
+      const imovelNaFaixa   = p.valorImovel <= tetoEntradaCity;
+      const rendaElegivel   = p.renda <= 4700;
+      const beneficioAtivo  = p.usaEntradaMoradia && cidadeElegivel && imovelNaFaixa && rendaElegivel;
+      const entradaMoradia  = beneficioAtivo ? state.entradaMoradiaValor : 0;
+
+      // Entrada necessária no teto da cidade (crédito CAIXA + subsídio MCMV + Entrada Moradia)
+      const subsidioMoradia = (p.renda <= 4700 && getSubsidioPermitido(p.tipoImovel))
+        ? calcSubsidio(tetoMoradia, 0, p.prazo, p.renda, p.dep, cidade, taxaAA)
+        : 0;
+      const tetoLTVM = tetoMoradia * ltv;
+      let pvSupM = 0;
+      if(p.prazo > 0 && taxaBaseMes > 0){
+        const fM = Math.pow(1 + taxaBaseMes, p.prazo);
+        pvSupM = parcelaNet * (fM - 1) / (taxaBaseMes * fM);
+      } else if(p.prazo > 0){ pvSupM = parcelaNet * p.prazo; }
+      const creditoMoradia = Math.round(Math.min(pvSupM, tetoLTVM));
+      const entradaNecTeto = Math.max(0, tetoMoradia - creditoMoradia - subsidioMoradia - entradaMoradia);
+
+      // Calculo do Mapa de Calor
+      // Se % liberado CAIXA < % Mapa de Calor (inserido), usa liberado CAIXA
+      // Senão, usa % Mapa de Calor (inserido)
+      const liberadoPct = p.valorImovel > 0 ? (liberado / p.valorImovel) : 0;
+      const mapaCalorPctInput = p.mapaCalorPctInput / 100;
+      const mapaCalorPct = liberadoPct < mapaCalorPctInput ? liberadoPct : mapaCalorPctInput;
+      const mapaCalorValor = Math.round(p.valorImovel * mapaCalorPct);
+
+      // Comprometimento da primeira parcela sobre a renda
+      const comprometimentoPrimeiraParcela = p.renda > 0 ? parcela / p.renda : 0;
+
+      // Juros de Obra = 1ª Parcela × % Cobrança Juros de Obra
+      const jurosObra = Math.round(parcela * (p.cobJurosObraPct / 100));
+
+      // Bônus Adimplência = Valor de Avaliação - Valor do Imóvel
+      // Se o resultado for negativo, zera
+      const subsidioAvaliacaoDif = Math.max(0, Math.round(p.valorAvaliacao - p.valorImovel));
+
+      // MENSAIS TOTAL = Valor do Imóvel - Bônus Adimplência - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada
+      const mensaisTotal = Math.max(0, Math.round(
+        p.valorImovel - subsidioAvaliacaoDif - mapaCalorValor - subsidio - entradaMoradia - p.entradaValor
+      ));
+
+      // % MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL
+      const percentualMensal = p.valorImovel > 0 ? mensaisTotal / p.valorImovel : 0;
+
+      // Mensais Obras = SE(Parcelas na Obra = 0; MENSAIS TOTAL / Parcelas Pós-Obra; SE((Renda * %Comprometimento * Parcelas na Obra) > MENSAIS TOTAL; MENSAIS TOTAL / Parcelas na Obra; Renda * %Comprometimento))
+      const comprometimentoDecimal = (p.comprometimentoMax || 30) / 100;
+      let mensaisObras = 0;
+      
+      if(p.parcelasObra === 0 || p.parcelasObra === '0'){
+        // SE Parcelas na Obra = 0: MENSAIS TOTAL / Parcelas Pós-Obra
+        mensaisObras = p.parcelasPosObra > 0 ? Math.round(mensaisTotal / p.parcelasPosObra) : 0;
+      } else {
+        // SE (Renda * %Comprometimento * Parcelas na Obra) > MENSAIS TOTAL
+        const rendaComprometidoObra = p.renda * comprometimentoDecimal * p.parcelasObra;
+        if(rendaComprometidoObra > mensaisTotal){
+          // MENSAIS TOTAL / Parcelas na Obra
+          mensaisObras = Math.round(mensaisTotal / p.parcelasObra);
+        } else {
+          // Renda * %Comprometimento
+          mensaisObras = Math.round(p.renda * comprometimentoDecimal);
+        }
+      }
+
+      // Mensal Pós-Obra = SE(VALOR DO IMÓVEL - MAPA DE CALOR - SUBSÍDIO - ENTRADA MORADIA - (MENSAIS OBRA * Parcelas na Obra) < 0; 0; (VALOR DO IMÓVEL - MAPA DE CALOR - SUBSÍDIO - ENTRADA MORADIA - (Mensais Obras * Parcelas na Obra)) / Parcelas Pós-Obra)
+      let mentalPosObra = 0;
+      const saldoPosObra = p.valorImovel - mapaCalorValor - subsidio - entradaMoradia - (mensaisObras * p.parcelasObra);
+      if(saldoPosObra < 0){
+        mentalPosObra = 0;
+      } else if(p.parcelasPosObra > 0){
+        mentalPosObra = Math.round(saldoPosObra / p.parcelasPosObra);
+      }
+
+      return { taxaAA, subsidio, liberado, tetoLTV, entradaNec, pv, parcela, comprometimento, modTxt, status, compPct, entradaMoradia, beneficioAtivo, cidadeElegivel, rendaElegivel, imovelNaFaixa, entradaNecTeto, creditoMoradia, subsidioMoradia, tetoMoradia, mapaCalor: mapaCalorPct, mapaCalorValor, comprometimentoPrimeiraParcela, jurosObra, entrada: p.entradaValor, valorAvaliacao: vAval, aprovacaoMaxPct, subsidioAvaliacaoDif, mensaisTotal, percentualMensal, parcelasObra: p.parcelasObra, mensaisObras, mentalPosObra };
+    }
+
+    function sincronizarEntrada(){ /* mantido para compatibilidade */ }
+
+        function buildEntradaMoradiaCell(res, base){
+      if(!res.cidadeElegivel)
+        return '<span style="color:#aaa;font-size:.68rem">— não elegível</span>';
+      if(!res.rendaElegivel)
+        return '<span style="color:#aaa;font-size:.68rem">— renda > R$4.700</span>';
+      if(!res.imovelNaFaixa)
+        return '<span style="color:#c0392b;font-size:.68rem">&#10007; imóvel acima do teto</span>';
+      if(!base.usaEntradaMoradia)
+        return '<span style="color:#007C27;font-size:.68rem;font-weight:600">elegível — marque acima</span>';
+      // Ativo
+      var sub = res.entradaNecTeto <= 0
+        ? '<span style="color:#007C27;font-size:.62rem;font-weight:700">&#10003; entrada coberta</span>'
+        : '<span style="color:#555;font-size:.62rem">entrada restante: ' + BRL(res.entradaNecTeto) + '</span>';
+      return '<div style="font-size:.82rem;font-weight:700;color:#007C27">+' + BRL(res.entradaMoradia) + '</div>' + sub;
+    }
+
+        function rodarAnalises(){
+      const rendaIni  = +document.getElementById('rendaIni').value  || 0;
+      const rendaFim  = +document.getElementById('rendaFim').value  || 0;
+      const rendaStep = +document.getElementById('rendaStep').value || 0;
+      const linhaP    = document.getElementById('linhaP').value || 'vista';
+
+      const usaEntradaMoradia = document.getElementById('entradaMoradiaCheck').checked;
+
+      const base = {
+        valorImovel:    +document.getElementById('valorImovel').value     || 0,
+        entrada:        +document.getElementById('entrada').value          || 0,
+        usaEntradaMoradia: usaEntradaMoradia,
+        prazo:          +document.getElementById('prazo').value            || 360,
+        dep:            +document.getElementById('dependentes').value      || 0,
+        parcelasObra:   +document.getElementById('parcelasObra').value    || 30,
+        parcelasPosObra:+document.getElementById('parcelasPosObra').value || 330,
+        tipoImovel:      document.getElementById('tipoImovel').value,
+        preferencia:     document.getElementById('modalidade').value,
+        tabela:          document.getElementById('tabela').value,
+        cidade:          document.getElementById('cidade').value,
+        origemRecursos:  document.getElementById('origemRecursos').value,
+        mapaCalorPctInput: +document.getElementById('mapaCalorPct').value || 70,
+        cobJurosObraPct: +document.getElementById('cobJurosObra').value || 0,
+        entradaValor: +document.getElementById('entradaValor').value || 0,
+        valorAvaliacao: +document.getElementById('valorAvaliacao').value || 0,
+        parcelasObra: +document.getElementById('parcelasObra').value || 30,
+        parcelasPosObra: +document.getElementById('parcelasPosObra').value || 330,
+        comprometimentoMax: +document.getElementById('comprometimentoMax').value || 30,
+      };
+
+
+      const limites = {
+        'vitoria': { compro_obra: [8, 12, 15], compro_pos: [8, 12, 15], risco: [8, 12, 15], prosoluto: [20, 30, 40] },
+        'viver':   { compro_obra: [8, 12, 15], compro_pos: [8, 12, 15], risco: [8, 12, 15], prosoluto: [20, 30, 40] },
+        'vista':   { compro_obra: [3, 5, 8],   compro_pos: [3, 5, 8],   risco: [3, 5, 8],   prosoluto: [20, 30, 40] },
+        'inc':     { compro_obra: [3, 5, 8],   compro_pos: [3, 5, 8],   risco: [3, 5, 8],   prosoluto: [20, 30, 40] }
+      };
+      const limiteAtual = limites[linhaP] || limites['vista'];
+
+      function getCorPorLimite(valor, lim) {
+        if(valor <= lim[0]) return 'rgba(34,197,94,.15)';
+        if(valor <= lim[1]) return 'rgba(202,138,4,.15)';
+        return 'rgba(220,38,38,.15)';
+      }
+      const tbody = document.getElementById('tbodyAnalises');
+      const btnExportar = document.getElementById('btnExportar');
+      tbody.innerHTML = '';
+
+      if(!rendaIni || !rendaFim || !rendaStep || rendaFim < rendaIni){
+        tbody.innerHTML = `<tr><td colspan="28" class="px-4 py-4 text-center text-red-500 font-semibold">⚠️ Dados inválidos — verifique os campos de renda.</td></tr>`;
+        btnExportar.style.display = 'none';
+        return;
+      }
+
+      // Mostrar botões após gerar análise
+      btnExportar.style.display = 'inline-block';
+      document.getElementById('btnExpandir').style.display = 'inline-block';
+
+      // Cores por faixa
+      const bgFaixa = { 'Faixa 1':'rgba(0,124,39,.07)', 'Faixa 2':'rgba(0,124,39,.05)', 'Faixa 3':'rgba(240,245,205,.4)', 'Faixa 4':'rgba(240,245,205,.25)' };
+
+      for(let r = rendaIni; r <= rendaFim; r += rendaStep){
+        const res = computeSim({ ...base, renda: r });
+        const faixaLbl = getFaixaLabel(r);
+        const tr = document.createElement('tr');
+        tr.style.background = bgFaixa[faixaLbl] || '';
+
+        tr.innerHTML = `
+          <td class="px-3 py-3 font-semibold text-xs">${faixaLbl}</td>
+          <td class="px-3 py-3 font-bold text-indigo-600">${BRL(base.valorImovel)}</td>
+          <td class="px-3 py-3 font-bold text-purple-600">${BRL(res.valorAvaliacao)}</td>
+          <td class="px-3 py-3 font-bold text-orange-600" style="background:rgba(255,165,0,.1)">${BRL(res.subsidioAvaliacaoDif)}</td>
+          <td class="px-3 py-3 font-bold">${BRL(r)}</td>
+          <td class="px-3 py-3">${res.taxaAA.toFixed(2)}% a.a.</td>
+          <td class="px-3 py-3 font-bold text-green-600">${BRL(res.liberado)}</td>
+          <td class="px-3 py-3 ${res.entradaNec > res.liberado ? 'text-red-500 font-semibold' : ''}">${BRL(res.entradaNec)}</td>
+          <td class="px-3 py-3">${res.modTxt}</td>
+          <td class="px-3 py-3">${res.subsidio > 0 ? BRL(res.subsidio) : '<span class="text-gray-300">—</span>'}</td>
+          <td class="px-3 py-3 font-bold" style="background:rgba(240,245,205,.35);border-left:3px solid #007C27">
+            ${buildEntradaMoradiaCell(res, base)}
+          </td>
+          <td class="px-3 py-3 font-bold">${BRL(res.parcela)}</td>
+          <td class="px-3 py-3 font-bold text-orange-600">${pctFmt(res.comprometimentoPrimeiraParcela)}</td>
+          <td class="px-3 py-3 ${res.comprometimento > res.compPct ? 'text-red-500 font-bold' : ''}">${pctFmt(res.comprometimento)}</td>
+          <td class="px-3 py-3 font-bold" style="background:rgba(0,124,39,.12)">${pctFmt(res.mapaCalor)}</td>
+          <td class="px-3 py-3 font-bold text-green-700" style="background:rgba(0,124,39,.08)">${BRL(res.mapaCalorValor)}</td>
+          <td class="px-3 py-3 font-bold text-red-600" style="background:rgba(255,0,0,.08)">${BRL(res.jurosObra)}</td>
+          <td class="px-3 py-3 font-bold text-blue-600">${BRL(res.entrada)}</td>
+          <td class="px-3 py-3 font-bold text-red-700" style="background:rgba(220,38,38,.1)">${BRL(res.mensaisTotal)}</td>
+          <td class="px-3 py-3 font-bold text-indigo-600" style="background:rgba(99,102,241,.1)">${pctFmt(res.percentualMensal)}</td>
+          <td class="px-3 py-3 font-bold text-teal-600">${res.parcelasObra}</td>
+          <td class="px-3 py-3 font-bold text-rose-600" style="background:rgba(244,63,94,.1)">${BRL(res.mensaisObras)}</td>
+          <td class="px-3 py-3 font-bold text-teal-700" style="background:rgba(240,245,205,.35);color:#1a3d29">${base.parcelasPosObra}</td>
+          <td class="px-3 py-3 font-bold text-blue-600" style="background:rgba(59,130,246,.1)">${BRL(res.mentalPosObra)}</td>
+          <td class="px-3 py-3 font-bold text-purple-600" style="background:rgba(147,51,234,.1)">${BRL(res.mensaisObras + res.jurosObra)}</td>
+          <td class="px-3 py-3 font-bold text-green-600" style="background:rgba(34,197,94,.1)">${BRL(res.mentalPosObra + res.parcela)}</td>
+          <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mensaisObras + res.jurosObra) / r) * 100, limiteAtual.compro_obra)}">${pctFmt((res.mensaisObras + res.jurosObra) / r)}</td>
+          <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mentalPosObra + res.parcela) / r) * 100, limiteAtual.compro_pos)}">${pctFmt((res.mentalPosObra + res.parcela) / r)}</td>
+          <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mentalPosObra * base.parcelasPosObra) / base.valorImovel) * 100, limiteAtual.risco)}">${pctFmt((res.mentalPosObra * base.parcelasPosObra) / base.valorImovel)}</td>
+          <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite((res.mensaisTotal / base.valorImovel) * 100, limiteAtual.prosoluto)}">${pctFmt(res.mensaisTotal / base.valorImovel)}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Atualizar Parcelas Pós-Obra automaticamente
+    document.addEventListener('DOMContentLoaded', () => {
+      const totalParcelasInput = document.getElementById('totalParcelas');
+      const parcelasObraInput = document.getElementById('parcelasObra');
+      const parcelasPosObraInput = document.getElementById('parcelasPosObra');
+
+      function atualizarParcelasPosObra() {
+        const total = +totalParcelasInput.value || 0;
+        const obra = +parcelasObraInput.value || 0;
+        const posObra = Math.max(0, total - obra);
+        parcelasPosObraInput.value = posObra;
+      }
+
+      totalParcelasInput.addEventListener('change', atualizarParcelasPosObra);
+      totalParcelasInput.addEventListener('input', atualizarParcelasPosObra);
+      parcelasObraInput.addEventListener('change', atualizarParcelasPosObra);
+      parcelasObraInput.addEventListener('input', atualizarParcelasPosObra);
+
+      document.getElementById('btnAnalises').addEventListener('click', rodarAnalises);
+
+      // ── BOTÃO EXPANDIR — Fullscreen API (igual F11 no elemento da tabela) ──
+      const btnExpandir = document.getElementById('btnExpandir');
+      const analiseTable = document.getElementById('analiseTable');
+
+      // Estilo injetado para fullscreen
+      const fsStyle = document.createElement('style');
+      fsStyle.textContent = `
+        #analiseTable:fullscreen,
+        #analiseTable:-webkit-full-screen,
+        #analiseTable:-moz-full-screen,
+        #analiseTable:-ms-fullscreen {
+          background: #002818;
+          overflow: auto;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        #analiseTable:fullscreen table,
+        #analiseTable:-webkit-full-screen table,
+        #analiseTable:-moz-full-screen table,
+        #analiseTable:-ms-fullscreen table {
+          font-size: .82rem;
+          width: max-content;
+          min-width: 100%;
+          border-radius: 12px;
+        }
+        #analiseTable:fullscreen thead tr th,
+        #analiseTable:-webkit-full-screen thead tr th,
+        #analiseTable:-moz-full-screen thead tr th,
+        #analiseTable:-ms-fullscreen thead tr th {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+        }
+      `;
+      document.head.appendChild(fsStyle);
+
+      btnExpandir.addEventListener('click', () => {
+        if(!document.fullscreenElement){
+          const req = analiseTable.requestFullscreen
+            || analiseTable.webkitRequestFullscreen
+            || analiseTable.mozRequestFullScreen
+            || analiseTable.msRequestFullscreen;
+          if(req) req.call(analiseTable);
+        } else {
+          document.exitFullscreen && document.exitFullscreen();
+        }
+      });
+
+      // ── CONGELAR COLUNAS (Faixa + Renda) ─────────────────────────────────
+      // Aplica position:sticky com left calculado dinamicamente após render
+      function aplicarStickyCol(){
+        const table = document.querySelector('#analiseTable table');
+        if(!table) return;
+        const FREEZE_UP_TO = 6; // 0=Faixa, 1=Valor Imóvel, 2=Valor Avaliação, 3=Bônus, 4=Renda, 5=Taxa, 6=Crédito CAIXA
+        const rows = table.querySelectorAll('tr');
+
+        // Calcular larguras reais de cada coluna pela primeira linha de dados (ou thead)
+        const refRow = table.querySelector('thead tr');
+        const widths = [];
+        if(refRow){
+          refRow.querySelectorAll('th').forEach(th => widths.push(th.offsetWidth));
+        }
+
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('th, td');
+          let offset = 0;
+          cells.forEach((cell, i) => {
+            if(i <= FREEZE_UP_TO){
+              const isHead = cell.tagName === 'TH';
+              cell.classList.add(isHead ? 'col-sticky-head' : 'col-sticky');
+              cell.style.left = offset + 'px';
+              // Adicionar borda direita na última coluna congelada
+              if(i === FREEZE_UP_TO){
+                cell.style.borderRight = '2px solid rgba(0,124,39,.4)';
+                cell.style.boxShadow = '3px 0 8px rgba(0,0,0,.15)';
+              }
+            }
+            offset += (widths[i] || cell.offsetWidth);
+          });
+        });
+      }
+
+      // Reaplicar sempre que a tabela for (re)gerada
+      const _rodarAnalises = rodarAnalises;
+      rodarAnalises = function(){
+        _rodarAnalises();
+        requestAnimationFrame(() => requestAnimationFrame(aplicarStickyCol));
+      };
+
+      // Atualizar label do botão conforme estado fullscreen
+      document.addEventListener('fullscreenchange', () => {
+        if(document.fullscreenElement === analiseTable){
+          btnExpandir.textContent = '✕ Sair da Tela Cheia';
+        } else {
+          btnExpandir.textContent = '⛶ Expandir Tabela';
+        }
+      });
+
+      const btnExportar = document.getElementById('btnExportar');
+
+      btnExportar.addEventListener('click', () => {
+        try {
+          const table = document.querySelector('#analiseTable table');
+          if(!table) {
+            alert('Nenhuma tabela encontrada. Gere a analise primeiro.');
+            return;
+          }
+
+          const tbody = table.querySelector('tbody');
+          if(!tbody || tbody.children.length === 0) {
+            alert('Nenhum dado para exportar. Gere a analise primeiro.');
+            return;
+          }
+
+          const ws = XLSX.utils.table_to_sheet(table, {raw: true});
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Analise');
+          XLSX.writeFile(wb, 'analise-multipla-por-renda.xlsx');
+        } catch(e) {
+          console.error('Erro ao exportar:', e);
+          alert('Erro ao exportar a tabela. Verifique o console.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
