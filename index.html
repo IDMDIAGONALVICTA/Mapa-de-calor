@@ -360,7 +360,7 @@
               <th class="px-3 py-4 text-left font-bold">Parcelas na Obra</th>
               <th class="px-3 py-4 text-left font-bold" title="Mensais Obras = SE(Renda=0, Valor do Imóvel, MIN(1ª Parcela × Comprometimento × Parcelas na Obra, Mensais Total))">Mensais Obras</th>
               <th class="px-3 py-4 text-left font-bold" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Parcelas Pós-Obra</th>
-              <th class="px-3 py-4 text-left font-bold" title="Mensal Pós-Obra = SE(Valor do Imóvel - Mapa de Calor - Subsídio - Entrada Moradia - (Mensais Obras * Parcelas na Obra) < 0; 0; (Valor do Imóvel - Mapa de Calor - Subsídio - Entrada Moradia - (Mensais Obras * Parcelas na Obra)) / Parcelas Pós-Obra)">Mensal Pós-Obra</th>
+              <th class="px-3 py-4 text-left font-bold" title="Mensal Pós-Obra = (MENSAIS TOTAL − (Mensais Obras × Parcelas na Obra)) / Parcelas Pós-Obra">Mensal Pós-Obra</th>
               <th class="px-3 py-4 text-left font-bold" title="JUROS DE OBRA + VICTA (PRE) = Mensais Obras + JUROS DE OBRA">JUROS DE OBRA + VICTA (PRE)</th>
               <th class="px-3 py-4 text-left font-bold" title="PAR CEF + VICTA (POS) = Mensal Pós-Obra + 1ª Parcela">PAR CEF + VICTA (PÓS)</th>
               <th class="px-3 py-4 text-left font-bold">COMPRO (OBRA)</th>
@@ -829,13 +829,12 @@
         }
       }
 
-      // Mensal Pós-Obra = SE(VALOR DO IMÓVEL - MAPA DE CALOR - SUBSÍDIO - ENTRADA MORADIA - (MENSAIS OBRA * Parcelas na Obra) < 0; 0; (VALOR DO IMÓVEL - MAPA DE CALOR - SUBSÍDIO - ENTRADA MORADIA - (Mensais Obras * Parcelas na Obra)) / Parcelas Pós-Obra)
+      // Mensal Pós-Obra = (MENSAIS TOTAL - (Mensais Obras × Parcelas na Obra)) / Parcelas Pós-Obra
+      // SE resultado < 0 → 0
       let mentalPosObra = 0;
-      const saldoPosObra = p.valorImovel - mapaCalorValor - subsidio - entradaMoradia - (mensaisObras * p.parcelasObra);
-      if(saldoPosObra < 0){
-        mentalPosObra = 0;
-      } else if(p.parcelasPosObra > 0){
-        mentalPosObra = Math.round(saldoPosObra / p.parcelasPosObra);
+      const saldoPosObra = mensaisTotal - (mensaisObras * p.parcelasObra);
+      if(saldoPosObra > 0 && p.parcelasPosObra > 0){
+        mentalPosObra = saldoPosObra / p.parcelasPosObra;
       }
 
       return { taxaAA, subsidio, liberado, tetoLTV, entradaNec, pv, parcela, comprometimento, modTxt, status, compPct, entradaMoradia, beneficioAtivo, cidadeElegivel, rendaElegivel, imovelNaFaixa, entradaNecTeto, creditoMoradia, subsidioMoradia, tetoMoradia, mapaCalor: mapaCalorPct, mapaCalorValor, comprometimentoPrimeiraParcela, jurosObra, entrada: p.entradaValor, valorAvaliacao: vAval, aprovacaoMaxPct, subsidioAvaliacaoDif, mensaisTotal, percentualMensal, parcelasObra: p.parcelasObra, mensaisObras, mentalPosObra };
