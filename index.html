@@ -162,18 +162,6 @@
         </div>
         <div class="grid md:grid-cols-4 gap-4 mb-4">
           <div>
-            <label>Total de Parcelas</label>
-            <input id="totalParcelas" type="number" class="input-modern" value="360" />
-          </div>
-          <div>
-            <label>Parcelas na Obra</label>
-            <input id="parcelasObra" type="number" class="input-modern" value="30" />
-          </div>
-          <div>
-            <label>Parcelas Pós-Obra</label>
-            <input id="parcelasPosObra" type="number" class="input-modern" value="330" disabled />
-          </div>
-          <div>
             <label>Cidade / Região</label>
             <select id="cidade" class="input-modern">
               <optgroup label="Ceará — RMF">
@@ -213,15 +201,6 @@
                 <option value="sul-geral">Sul — Geral (R$ 230k)</option>
                 <option value="centro-oeste-geral">Centro-Oeste — Geral (R$ 230k)</option>
               </optgroup>
-            </select>
-          </div>
-          <div>
-            <label>Linha de Produto</label>
-            <select id="linhaP" class="input-modern">
-              <option value="vista">VISTA</option>
-              <option value="viver">VIVER</option>
-              <option value="vitoria">VITÓRIA</option>
-              <option value="inc">INC</option>
             </select>
           </div>
           <div>
@@ -279,8 +258,29 @@
             <input id="mapaCalorPct" type="number" class="input-modern" value="70" min="0" max="100" placeholder="Ex: 70" />
           </div>
           <div>
+            <label>Total de Parcelas</label>
+            <input id="totalParcelas" type="number" class="input-modern" value="72" />
+          </div>
+          <div>
+            <label>Parcelas na Obra</label>
+            <input id="parcelasObra" type="number" class="input-modern" value="30" />
+          </div>
+          <div>
+            <label>Parcelas Pós-Obra</label>
+            <input id="parcelasPosObra" type="number" class="input-modern" value="42" disabled />
+          </div>
+          <div>
+            <label>Linha de Produto</label>
+            <select id="linhaP" class="input-modern">
+              <option value="vista">VISTA</option>
+              <option value="viver">VIVER</option>
+              <option value="vitoria">VITÓRIA</option>
+              <option value="inc">INC</option>
+            </select>
+          </div>
+          <div>
             <label>% (Cobrança Juros de Obra)</label>
-            <input id="cobJurosObra" type="number" class="input-modern" value="0" min="0" max="100" placeholder="Ex: 5" />
+            <input id="cobJurosObra" type="number" class="input-modern" value="100" min="0" max="100" placeholder="Ex: 5" />
           </div>
           <div>
             <label>Entrada (R$)</label>
@@ -288,7 +288,7 @@
           </div>
           <div>
             <label>|%Comprometimento</label>
-            <input id="comprometimentoMax" type="number" class="input-modern" value="30" min="0" max="100" placeholder="Ex: 30" />
+            <input id="comprometimentoMax" type="number" class="input-modern" value="20" min="0" max="100" placeholder="Ex: 30" />
           </div>
         </div>
         <div style="border-top:2px dashed rgba(0,124,39,.2);padding-top:1rem;margin-top:1rem">
@@ -351,12 +351,11 @@
               <th class="px-3 py-4 text-left font-bold" title="Entrada mínima para comprar no teto da cidade selecionada = Teto Cidade − Crédito CAIXA − Subsídio" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Entrada Moradia</th>
               <th class="px-3 py-4 text-left font-bold">1ª Parcela</th>
               <th class="px-3 py-4 text-left font-bold" title="Comprometimento da primeira parcela sobre a renda">% Comp Parcela</th>
-              <th class="px-3 py-4 text-left font-bold">% Renda</th>
               <th class="px-3 py-4 text-left font-bold" title="% Mapa de Calor: se liberado &lt; 70%, usa o proprio valor; caso contrario, usa o % inserido">% Mapa de Calor</th>
               <th class="px-3 py-4 text-left font-bold" title="Valor em R$ do Mapa de Calor (70% do valor liberado)">Mapa de Calor (R$)</th>
               <th class="px-3 py-4 text-left font-bold" title="Juros de Obra = 1ª Parcela × % Cobrança Juros de Obra">JUROS DE OBRA</th>
               <th class="px-3 py-4 text-left font-bold">Entrada</th>
-              <th class="px-3 py-4 text-left font-bold" title="MENSAIS TOTAL = Valor do Imóvel - Bônus Adimplência - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada">MENSAIS TOTAL</th>
+              <th class="px-3 py-4 text-left font-bold" title="MENSAIS TOTAL = Valor do Imóvel - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada">MENSAIS TOTAL</th>
               <th class="px-3 py-4 text-left font-bold" title="% MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL">% MENSAL</th>
               <th class="px-3 py-4 text-left font-bold">Parcelas na Obra</th>
               <th class="px-3 py-4 text-left font-bold" title="Mensais Obras = SE(Renda=0, Valor do Imóvel, MIN(1ª Parcela × Comprometimento × Parcelas na Obra, Mensais Total))">Mensais Obras</th>
@@ -803,9 +802,9 @@
       // Se o resultado for negativo, zera
       const subsidioAvaliacaoDif = Math.max(0, Math.round(p.valorAvaliacao - p.valorImovel));
 
-      // MENSAIS TOTAL = Valor do Imóvel - Bônus Adimplência - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada
+      // MENSAIS TOTAL = Valor do Imóvel - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada
       const mensaisTotal = Math.max(0, Math.round(
-        p.valorImovel - subsidioAvaliacaoDif - mapaCalorValor - subsidio - entradaMoradia - p.entradaValor
+        p.valorImovel - mapaCalorValor - subsidio - entradaMoradia - p.entradaValor
       ));
 
       // % MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL
@@ -875,7 +874,7 @@
         prazo:          +document.getElementById('prazo').value            || 360,
         dep:            +document.getElementById('dependentes').value      || 0,
         parcelasObra:   +document.getElementById('parcelasObra').value    || 30,
-        parcelasPosObra:+document.getElementById('parcelasPosObra').value || 330,
+        parcelasPosObra:+document.getElementById('parcelasPosObra').value || 42,
         tipoImovel:      document.getElementById('tipoImovel').value,
         preferencia:     document.getElementById('modalidade').value,
         tabela:          document.getElementById('tabela').value,
@@ -886,8 +885,8 @@
         entradaValor: +document.getElementById('entradaValor').value || 0,
         valorAvaliacao: +document.getElementById('valorAvaliacao').value || 0,
         parcelasObra: +document.getElementById('parcelasObra').value || 30,
-        parcelasPosObra: +document.getElementById('parcelasPosObra').value || 330,
-        comprometimentoMax: +document.getElementById('comprometimentoMax').value || 30,
+        parcelasPosObra: +document.getElementById('parcelasPosObra').value || 42,
+        comprometimentoMax: +document.getElementById('comprometimentoMax').value || 20,
       };
 
 
@@ -943,7 +942,6 @@
           </td>
           <td class="px-3 py-3 font-bold">${BRL(res.parcela)}</td>
           <td class="px-3 py-3 font-bold text-orange-600">${pctFmt(res.comprometimentoPrimeiraParcela)}</td>
-          <td class="px-3 py-3 ${res.comprometimento > res.compPct ? 'text-red-500 font-bold' : ''}">${pctFmt(res.comprometimento)}</td>
           <td class="px-3 py-3 font-bold" style="background:rgba(0,124,39,.12)">${pctFmt(res.mapaCalor)}</td>
           <td class="px-3 py-3 font-bold text-green-700" style="background:rgba(0,124,39,.08)">${BRL(res.mapaCalorValor)}</td>
           <td class="px-3 py-3 font-bold text-red-600" style="background:rgba(255,0,0,.08)">${BRL(res.jurosObra)}</td>
