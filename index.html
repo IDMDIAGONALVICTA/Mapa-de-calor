@@ -6,6 +6,7 @@
   <title>Análise Múltipla por Renda - MCMV 2026</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap');
     * { font-family: 'Poppins', sans-serif; }
@@ -108,6 +109,77 @@
     .f2 { background: #f0f5cd; border-color: #7aab00; color: #2a3a0a; }
     .f3 { background: #f5f8e8; border-color: #b5c900; color: #3a3a0a; }
     .f4 { background: #fafbf0; border-color: #c8d400; color: #4a4a10; }
+
+    /* ── Modal de preview de screenshot ── */
+    #screenshotModal {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,20,10,.82); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    #screenshotModal.open { display: flex; }
+    #screenshotModal .modal-box {
+      background: #F0F5CD; border-radius: 20px;
+      padding: 1.5rem; max-width: 96vw; max-height: 90vh;
+      display: flex; flex-direction: column; gap: 1rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      border: 2px solid rgba(0,124,39,.3);
+    }
+    #screenshotModal .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem;
+    }
+    #screenshotModal .modal-header h3 {
+      font-size: 1rem; font-weight: 700; color: var(--dark); margin: 0;
+    }
+    #screenshotModal .modal-actions {
+      display: flex; gap: .6rem; flex-wrap: wrap;
+    }
+    #screenshotModal .modal-preview {
+      overflow: auto; border-radius: 10px;
+      border: 2px solid rgba(0,124,39,.2);
+      background: white;
+      max-height: calc(90vh - 130px);
+    }
+    #screenshotModal .modal-preview img {
+      display: block; max-width: none;
+    }
+    .btn-modal-action {
+      padding: .5rem 1.1rem; border-radius: 10px; border: none;
+      font-size: .78rem; font-weight: 700; cursor: pointer; transition: all .2s;
+    }
+    .btn-modal-dl  { background: linear-gradient(135deg,#007C27,#002818); color:#F0F5CD; }
+    .btn-modal-dl:hover  { transform:translateY(-1px); box-shadow: 0 6px 16px rgba(0,124,39,.4); }
+    .btn-modal-cls { background: rgba(0,0,0,.08); color:#333; }
+    .btn-modal-cls:hover { background: rgba(220,38,38,.12); color:#c0392b; }
+    #btnScreenshot { display: none; }
+    .col-hidden { display: none !important; }
+
+    .col-toggle-bar {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      padding: .85rem 1rem; margin-bottom: .75rem;
+      background: linear-gradient(135deg, rgba(0,40,24,.05) 0%, rgba(0,124,39,.05) 100%);
+      border: 2px solid rgba(0,124,39,.18);
+      border-radius: 14px;
+    }
+    .col-toggle-bar span {
+      font-size: .68rem; font-weight: 700; color: #1a3d29;
+      display: flex; align-items: center; gap: .3rem; margin-right: .25rem;
+    }
+    .btn-col-toggle {
+      display: flex; align-items: center; gap: .35rem;
+      padding: .38rem .85rem; border-radius: 10px; border: 2px solid;
+      font-size: .7rem; font-weight: 700; cursor: pointer; transition: all .22s ease;
+      user-select: none;
+    }
+    .btn-col-toggle.visible {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+      border-color: var(--primary); color: #F0F5CD;
+    }
+    .btn-col-toggle.hidden-state {
+      background: rgba(255,255,255,.7);
+      border-color: rgba(0,124,39,.3); color: #4a4a4a;
+    }
+    .btn-col-toggle:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,124,39,.25); }
   </style>
 </head>
 <body>
@@ -211,26 +283,6 @@
               <option value="sbpe">SBPE / SFH</option>
             </select>
           </div>
-        </div>
-        <div class="grid md:grid-cols-4 gap-4">
-          <div>
-            <label>Tipo do Imóvel</label>
-            <select id="tipoImovel" class="input-modern">
-              <option value="novo180">NOVO (até 180 dias de Habite-se)</option>
-              <option value="usado">USADO</option>
-              <option value="construcao_tc" selected>CONSTRUÇÃO/AQ.TERRENO E CONSTRUÇÃO</option>
-              <option value="reforma">REFORMA E/OU AMPLIAÇÃO</option>
-              <option value="planta">CONSTRUÇÃO/AQ TER CONST - IM. PLANTA E COLETIVAS</option>
-              <option value="matcon">MATCON - CONST/REF/AMPL - PNHR G2 E G3</option>
-            </select>
-          </div>
-          <div>
-            <label>Tabela Amortização</label>
-            <select id="tabela" class="input-modern">
-              <option value="PRICE">PRICE (parcela fixa)</option>
-              <option value="SAC">SAC (parcela decrescente)</option>
-            </select>
-          </div>
           <div>
             <label>Origem de Recursos (CAIXA)</label>
             <select id="origemRecursos" class="input-modern">
@@ -253,6 +305,26 @@
               <option value="sbpe">SBPE</option>
             </select>
           </div>
+          <div>
+            <label>Tipo do Imóvel</label>
+            <select id="tipoImovel" class="input-modern">
+              <option value="novo180">NOVO (até 180 dias de Habite-se)</option>
+              <option value="usado">USADO</option>
+              <option value="construcao_tc" selected>CONSTRUÇÃO/AQ.TERRENO E CONSTRUÇÃO</option>
+              <option value="reforma">REFORMA E/OU AMPLIAÇÃO</option>
+              <option value="planta">CONSTRUÇÃO/AQ TER CONST - IM. PLANTA E COLETIVAS</option>
+              <option value="matcon">MATCON - CONST/REF/AMPL - PNHR G2 E G3</option>
+            </select>
+          </div>
+          <div>
+            <label>Tabela Amortização</label>
+            <select id="tabela" class="input-modern">
+              <option value="PRICE">PRICE (parcela fixa)</option>
+              <option value="SAC">SAC (parcela decrescente)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-4 gap-4">
           <div>
             <label>% Mapa de Calor</label>
             <input id="mapaCalorPct" type="number" class="input-modern" value="70" min="0" max="100" placeholder="Ex: 70" />
@@ -332,6 +404,24 @@
             <button id="btnAnalises" class="btn-gradient">📊 Gerar Análise Completa</button>
             <button id="btnExportar" class="btn-gradient" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Exportar tabela em Excel">📥 Exportar Excel</button>
             <button id="btnExpandir" class="btn-gradient" style="background:linear-gradient(135deg,#6366f1 0%,#4338ca 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Expandir tabela em tela cheia">⛶ Expandir Tabela</button>
+            <button id="btnScreenshot" class="btn-gradient" style="background:linear-gradient(135deg,#0ea5e9 0%,#0369a1 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;" title="Tirar print da tabela">📸 Print da Tabela</button>
+          </div>
+
+          <!-- ── BARRA DE OCULTAR COLUNAS ── -->
+          <div class="col-toggle-bar">
+            <span>👁 Ocultar colunas:</span>
+            <button class="btn-col-toggle visible" data-group="A" onclick="toggleColGroup('A',this)">
+              Taxa a.a. → Modalidade
+            </button>
+            <button class="btn-col-toggle visible" data-group="B" onclick="toggleColGroup('B',this)">
+              1ª Parcela → % Mapa de Calor
+            </button>
+            <button class="btn-col-toggle visible" data-group="C" onclick="toggleColGroup('C',this)">
+              JUROS DE OBRA → % MENSAL
+            </button>
+            <button class="btn-col-toggle visible" data-group="D" onclick="toggleColGroup('D',this)">
+              VICTA PRÉ + PÓS
+            </button>
           </div>
 
           <div id="analiseTable" style="max-height:70vh;overflow:auto;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.12);">
@@ -343,26 +433,26 @@
               <th class="px-3 py-4 text-left font-bold">Valor de avaliação</th>
               <th class="px-3 py-4 text-left font-bold" title="Bônus Adimplência = Valor de Avaliação - Valor do Imóvel (se negativo, zera)">Bônus Adimplência</th>
               <th class="px-3 py-4 text-left font-bold">Renda</th>
-              <th class="px-3 py-4 text-left font-bold">Taxa a.a.</th>
-              <th class="px-3 py-4 text-left font-bold" title="Valor que a CAIXA efetivamente financia = min(pvSuportado pela renda, LTV% × min(valorAvaliação, valorImovel))">Crédito CAIXA</th>
-              <th class="px-3 py-4 text-left font-bold" title="Entrada necessária = Imóvel − Crédito CAIXA − Subsídio">Entrada Nec.</th>
-              <th class="px-3 py-4 text-left font-bold">Modalidade</th>
+              <th class="px-3 py-4 text-left font-bold" data-colgroup="A">Taxa a.a.</th>
+              <th class="px-3 py-4 text-left font-bold" title="Valor que a CAIXA efetivamente financia = min(pvSuportado pela renda, LTV% × min(valorAvaliação, valorImovel))" data-colgroup="A">Crédito CAIXA</th>
+              <th class="px-3 py-4 text-left font-bold" title="Entrada necessária = Imóvel − Crédito CAIXA − Subsídio" data-colgroup="A">Entrada Nec.</th>
+              <th class="px-3 py-4 text-left font-bold" data-colgroup="A">Modalidade</th>
               <th class="px-3 py-4 text-left font-bold">Subsídio</th>
               <th class="px-3 py-4 text-left font-bold" title="Entrada mínima para comprar no teto da cidade selecionada = Teto Cidade − Crédito CAIXA − Subsídio" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Entrada Moradia</th>
-              <th class="px-3 py-4 text-left font-bold">1ª Parcela</th>
-              <th class="px-3 py-4 text-left font-bold" title="Comprometimento da primeira parcela sobre a renda">% Comp Parcela</th>
-              <th class="px-3 py-4 text-left font-bold" title="% Mapa de Calor: se liberado &lt; 70%, usa o proprio valor; caso contrario, usa o % inserido">% Mapa de Calor</th>
+              <th class="px-3 py-4 text-left font-bold" data-colgroup="B">1ª Parcela</th>
+              <th class="px-3 py-4 text-left font-bold" title="Comprometimento da primeira parcela sobre a renda" data-colgroup="B">% Comp Parcela</th>
+              <th class="px-3 py-4 text-left font-bold" title="% Mapa de Calor: se liberado &lt; 70%, usa o proprio valor; caso contrario, usa o % inserido" data-colgroup="B">% Mapa de Calor</th>
               <th class="px-3 py-4 text-left font-bold" title="Valor em R$ do Mapa de Calor (70% do valor liberado)">Mapa de Calor (R$)</th>
-              <th class="px-3 py-4 text-left font-bold" title="Juros de Obra = 1ª Parcela × % Cobrança Juros de Obra">JUROS DE OBRA</th>
-              <th class="px-3 py-4 text-left font-bold">Entrada</th>
-              <th class="px-3 py-4 text-left font-bold" title="MENSAIS TOTAL = Valor do Imóvel - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada">MENSAIS TOTAL</th>
-              <th class="px-3 py-4 text-left font-bold" title="% MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL">% MENSAL</th>
+              <th class="px-3 py-4 text-left font-bold" title="Juros de Obra = 1ª Parcela × % Cobrança Juros de Obra" data-colgroup="C">JUROS DE OBRA</th>
+              <th class="px-3 py-4 text-left font-bold" data-colgroup="C">Entrada</th>
+              <th class="px-3 py-4 text-left font-bold" title="MENSAIS TOTAL = Valor do Imóvel - Mapa de Calor (R$) - Subsídio - Entrada Moradia - Entrada" data-colgroup="C">MENSAIS TOTAL</th>
+              <th class="px-3 py-4 text-left font-bold" title="% MENSAL = MENSAIS TOTAL / VALOR DO IMÓVEL" data-colgroup="C">% MENSAL</th>
               <th class="px-3 py-4 text-left font-bold">Parcelas na Obra</th>
               <th class="px-3 py-4 text-left font-bold" title="Mensais Obras = SE(Renda=0, Valor do Imóvel, MIN(1ª Parcela × Comprometimento × Parcelas na Obra, Mensais Total))">Mensais Obras</th>
               <th class="px-3 py-4 text-left font-bold" style="background:rgba(240,245,205,.25);color:#F0F5CD">🏠 Parcelas Pós-Obra</th>
               <th class="px-3 py-4 text-left font-bold" title="Mensal Pós-Obra = (MENSAIS TOTAL − (Mensais Obras × Parcelas na Obra)) / Parcelas Pós-Obra">Mensal Pós-Obra</th>
-              <th class="px-3 py-4 text-left font-bold" title="JUROS DE OBRA + VICTA (PRE) = Mensais Obras + JUROS DE OBRA">JUROS DE OBRA + VICTA (PRE)</th>
-              <th class="px-3 py-4 text-left font-bold" title="PAR CEF + VICTA (POS) = Mensal Pós-Obra + 1ª Parcela">PAR CEF + VICTA (PÓS)</th>
+              <th class="px-3 py-4 text-left font-bold" title="JUROS DE OBRA + VICTA (PRE) = Mensais Obras + JUROS DE OBRA" data-colgroup="D">JUROS DE OBRA + VICTA (PRE)</th>
+              <th class="px-3 py-4 text-left font-bold" title="PAR CEF + VICTA (POS) = Mensal Pós-Obra + 1ª Parcela" data-colgroup="D">PAR CEF + VICTA (PÓS)</th>
               <th class="px-3 py-4 text-left font-bold">COMPRO (OBRA)</th>
               <th class="px-3 py-4 text-left font-bold">COMPRO (PÓS CHAVES)</th>
               <th class="px-3 py-4 text-left font-bold">RISCO (PÓS-CHAVE)</th>
@@ -439,7 +529,56 @@
     </section>
   </main>
 
+  <!-- ── MODAL SCREENSHOT ── -->
+  <div id="screenshotModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📸 Preview — Print da Tabela</h3>
+        <div class="modal-actions">
+          <button class="btn-modal-action btn-modal-dl" id="btnDownloadImg">⬇️ Baixar PNG</button>
+          <button class="btn-modal-action btn-modal-cls" id="btnFecharModal">✕ Fechar</button>
+        </div>
+      </div>
+      <div class="modal-preview" id="screenshotPreview">
+        <img id="screenshotImg" src="" alt="Preview da tabela" />
+      </div>
+    </div>
+  </div>
+
   <script>
+    // ── OCULTAR / MOSTRAR GRUPOS DE COLUNAS ─────────────────────────────────
+    const _colGroupState = { A: true, B: true, C: true, D: true };
+
+    function toggleColGroup(group, btn) {
+      _colGroupState[group] = !_colGroupState[group];
+      const visible = _colGroupState[group];
+
+      // Ocultar/mostrar células thead e tbody
+      document.querySelectorAll(`[data-colgroup="${group}"]`).forEach(el => {
+        el.classList.toggle('col-hidden', !visible);
+      });
+
+      // Atualizar visual do botão
+      btn.classList.toggle('visible', visible);
+      btn.classList.toggle('hidden-state', !visible);
+
+      // Reaplicar sticky após mudança de visibilidade
+      if(typeof aplicarStickyCol === 'function') {
+        requestAnimationFrame(() => requestAnimationFrame(aplicarStickyCol));
+      }
+    }
+
+    // Restaurar estado de ocultação após regerar tabela
+    function reaplicarEstadoColunas() {
+      Object.keys(_colGroupState).forEach(group => {
+        if(!_colGroupState[group]) {
+          document.querySelectorAll(`[data-colgroup="${group}"]`).forEach(el => {
+            el.classList.add('col-hidden');
+          });
+        }
+      });
+    }
+
     const BRL = n => isFinite(n) ? n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—';
     const pctFmt = n => isFinite(n) ? (n*100).toFixed(1)+'%' : '—';
 
@@ -915,6 +1054,7 @@
       // Mostrar botões após gerar análise
       btnExportar.style.display = 'inline-block';
       document.getElementById('btnExpandir').style.display = 'inline-block';
+      document.getElementById('btnScreenshot').style.display = 'inline-block';
 
       // Cores por faixa
       const bgFaixa = { 'Faixa 1':'rgba(0,124,39,.07)', 'Faixa 2':'rgba(0,124,39,.05)', 'Faixa 3':'rgba(240,245,205,.4)', 'Faixa 4':'rgba(240,245,205,.25)' };
@@ -931,28 +1071,28 @@
           <td class="px-3 py-3 font-bold text-purple-600">${BRL(res.valorAvaliacao)}</td>
           <td class="px-3 py-3 font-bold text-orange-600" style="background:rgba(255,165,0,.1)">${BRL(res.subsidioAvaliacaoDif)}</td>
           <td class="px-3 py-3 font-bold">${BRL(r)}</td>
-          <td class="px-3 py-3">${res.taxaAA.toFixed(2)}% a.a.</td>
-          <td class="px-3 py-3 font-bold text-green-600">${BRL(res.liberado)}</td>
-          <td class="px-3 py-3 ${res.entradaNec > res.liberado ? 'text-red-500 font-semibold' : ''}">${BRL(res.entradaNec)}</td>
-          <td class="px-3 py-3">${res.modTxt}</td>
+          <td class="px-3 py-3" data-colgroup="A">${res.taxaAA.toFixed(2)}% a.a.</td>
+          <td class="px-3 py-3 font-bold text-green-600" data-colgroup="A">${BRL(res.liberado)}</td>
+          <td class="px-3 py-3 ${res.entradaNec > res.liberado ? 'text-red-500 font-semibold' : ''}" data-colgroup="A">${BRL(res.entradaNec)}</td>
+          <td class="px-3 py-3" data-colgroup="A">${res.modTxt}</td>
           <td class="px-3 py-3">${res.subsidio > 0 ? BRL(res.subsidio) : '<span class="text-gray-300">—</span>'}</td>
           <td class="px-3 py-3 font-bold" style="background:rgba(240,245,205,.35);border-left:3px solid #007C27">
             ${buildEntradaMoradiaCell(res, base)}
           </td>
-          <td class="px-3 py-3 font-bold">${BRL(res.parcela)}</td>
-          <td class="px-3 py-3 font-bold text-orange-600">${pctFmt(res.comprometimentoPrimeiraParcela)}</td>
-          <td class="px-3 py-3 font-bold" style="background:rgba(0,124,39,.12)">${pctFmt(res.mapaCalor)}</td>
+          <td class="px-3 py-3 font-bold" data-colgroup="B">${BRL(res.parcela)}</td>
+          <td class="px-3 py-3 font-bold text-orange-600" data-colgroup="B">${pctFmt(res.comprometimentoPrimeiraParcela)}</td>
+          <td class="px-3 py-3 font-bold" style="background:rgba(0,124,39,.12)" data-colgroup="B">${pctFmt(res.mapaCalor)}</td>
           <td class="px-3 py-3 font-bold text-green-700" style="background:rgba(0,124,39,.08)">${BRL(res.mapaCalorValor)}</td>
-          <td class="px-3 py-3 font-bold text-red-600" style="background:rgba(255,0,0,.08)">${BRL(res.jurosObra)}</td>
-          <td class="px-3 py-3 font-bold text-blue-600">${BRL(res.entrada)}</td>
-          <td class="px-3 py-3 font-bold text-red-700" style="background:rgba(220,38,38,.1)">${BRL(res.mensaisTotal)}</td>
-          <td class="px-3 py-3 font-bold text-indigo-600" style="background:rgba(99,102,241,.1)">${pctFmt(res.percentualMensal)}</td>
+          <td class="px-3 py-3 font-bold text-red-600" style="background:rgba(255,0,0,.08)" data-colgroup="C">${BRL(res.jurosObra)}</td>
+          <td class="px-3 py-3 font-bold text-blue-600" data-colgroup="C">${BRL(res.entrada)}</td>
+          <td class="px-3 py-3 font-bold text-red-700" style="background:rgba(220,38,38,.1)" data-colgroup="C">${BRL(res.mensaisTotal)}</td>
+          <td class="px-3 py-3 font-bold text-indigo-600" style="background:rgba(99,102,241,.1)" data-colgroup="C">${pctFmt(res.percentualMensal)}</td>
           <td class="px-3 py-3 font-bold text-teal-600">${res.parcelasObra}</td>
           <td class="px-3 py-3 font-bold text-rose-600" style="background:rgba(244,63,94,.1)">${BRL(res.mensaisObras)}</td>
           <td class="px-3 py-3 font-bold text-teal-700" style="background:rgba(240,245,205,.35);color:#1a3d29">${base.parcelasPosObra}</td>
           <td class="px-3 py-3 font-bold text-blue-600" style="background:rgba(59,130,246,.1)">${BRL(res.mentalPosObra)}</td>
-          <td class="px-3 py-3 font-bold text-purple-600" style="background:rgba(147,51,234,.1)">${BRL(res.mensaisObras + res.jurosObra)}</td>
-          <td class="px-3 py-3 font-bold text-green-600" style="background:rgba(34,197,94,.1)">${BRL(res.mentalPosObra + res.parcela)}</td>
+          <td class="px-3 py-3 font-bold text-purple-600" style="background:rgba(147,51,234,.1)" data-colgroup="D">${BRL(res.mensaisObras + res.jurosObra)}</td>
+          <td class="px-3 py-3 font-bold text-green-600" style="background:rgba(34,197,94,.1)" data-colgroup="D">${BRL(res.mentalPosObra + res.parcela)}</td>
           <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mensaisObras + res.jurosObra) / r) * 100, limiteAtual.compro_obra)}">${pctFmt((res.mensaisObras + res.jurosObra) / r)}</td>
           <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mentalPosObra + res.parcela) / r) * 100, limiteAtual.compro_pos)}">${pctFmt((res.mentalPosObra + res.parcela) / r)}</td>
           <td class="px-3 py-3 font-bold" style="background:${getCorPorLimite(((res.mentalPosObra * base.parcelasPosObra) / base.valorImovel) * 100, limiteAtual.risco)}">${pctFmt((res.mentalPosObra * base.parcelasPosObra) / base.valorImovel)}</td>
@@ -1069,7 +1209,10 @@
       const _rodarAnalises = rodarAnalises;
       rodarAnalises = function(){
         _rodarAnalises();
-        requestAnimationFrame(() => requestAnimationFrame(aplicarStickyCol));
+        requestAnimationFrame(() => {
+          requestAnimationFrame(aplicarStickyCol);
+          reaplicarEstadoColunas();
+        });
       };
 
       // Atualizar label do botão conforme estado fullscreen
@@ -1105,6 +1248,67 @@
           console.error('Erro ao exportar:', e);
           alert('Erro ao exportar a tabela. Verifique o console.');
         }
+      });
+
+      // ── SCREENSHOT ───────────────────────────────────────────────────────
+      const btnScreenshot  = document.getElementById('btnScreenshot');
+      const modal          = document.getElementById('screenshotModal');
+      const screenshotImg  = document.getElementById('screenshotImg');
+      const btnDownloadImg = document.getElementById('btnDownloadImg');
+      const btnFecharModal = document.getElementById('btnFecharModal');
+      let   _lastDataUrl   = null;
+
+      btnScreenshot.addEventListener('click', async () => {
+        const tableWrap = document.getElementById('analiseTable');
+        const table     = tableWrap ? tableWrap.querySelector('table') : null;
+        if(!table || !table.querySelector('tbody tr td:not([colspan])')) {
+          alert('Gere a Análise Completa antes de tirar o print.');
+          return;
+        }
+
+        // Feedback visual no botão
+        btnScreenshot.textContent = '⏳ Gerando...';
+        btnScreenshot.disabled = true;
+
+        try {
+          // Captura toda a tabela, sem scroll limitado
+          const canvas = await html2canvas(table, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: table.scrollWidth + 40,
+          });
+
+          _lastDataUrl = canvas.toDataURL('image/png');
+          screenshotImg.src = _lastDataUrl;
+          modal.classList.add('open');
+        } catch(err) {
+          console.error('Erro ao gerar screenshot:', err);
+          alert('Erro ao gerar a imagem. Tente novamente.');
+        } finally {
+          btnScreenshot.textContent = '📸 Print da Tabela';
+          btnScreenshot.disabled = false;
+        }
+      });
+
+      btnDownloadImg.addEventListener('click', () => {
+        if(!_lastDataUrl) return;
+        const a = document.createElement('a');
+        a.href     = _lastDataUrl;
+        a.download = 'analise-multipla-por-renda.png';
+        a.click();
+      });
+
+      btnFecharModal.addEventListener('click', () => {
+        modal.classList.remove('open');
+      });
+
+      // Fechar ao clicar fora do modal
+      modal.addEventListener('click', e => {
+        if(e.target === modal) modal.classList.remove('open');
       });
     });
   </script>
