@@ -157,12 +157,12 @@
     .col-toggle-bar {
       display: flex; flex-wrap: wrap; gap: .5rem;
       padding: .85rem 1rem; margin-bottom: .75rem;
-      background: linear-gradient(135deg, rgba(0,40,24,.05) 0%, rgba(0,124,39,.05) 100%);
-      border: 2px solid rgba(0,124,39,.18);
+      background: linear-gradient(135deg, rgba(0,40,24,.06) 0%, rgba(0,124,39,.06) 100%);
+      border: 2px solid #007C27;
       border-radius: 14px;
     }
     .col-toggle-bar span {
-      font-size: .68rem; font-weight: 700; color: #1a3d29;
+      font-size: .68rem; font-weight: 700; color: #002818;
       display: flex; align-items: center; gap: .3rem; margin-right: .25rem;
     }
     .btn-col-toggle {
@@ -172,14 +172,16 @@
       user-select: none;
     }
     .btn-col-toggle.visible {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
-      border-color: var(--primary); color: #F0F5CD;
+      background: linear-gradient(135deg, #007C27 0%, #002818 100%);
+      border-color: #002818;
+      color: #F0F5CD;
     }
     .btn-col-toggle.hidden-state {
-      background: rgba(255,255,255,.7);
-      border-color: rgba(0,124,39,.3); color: #4a4a4a;
+      background: #F0F5CD;
+      border-color: #007C27;
+      color: #002818;
     }
-    .btn-col-toggle:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,124,39,.25); }
+    .btn-col-toggle:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,124,39,.3); }
   </style>
 </head>
 <body>
@@ -401,10 +403,10 @@
       <!-- SEÇÃO: GERAR ANÁLISE COMPLETA -->
       <div style="margin-top:2rem">
           <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem">
-            <button id="btnAnalises" class="btn-gradient">📊 Gerar Análise Completa</button>
-            <button id="btnExportar" class="btn-gradient" style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Exportar tabela em Excel">📥 Exportar Excel</button>
-            <button id="btnExpandir" class="btn-gradient" style="background:linear-gradient(135deg,#6366f1 0%,#4338ca 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;display:none" title="Expandir tabela em tela cheia">⛶ Expandir Tabela</button>
-            <button id="btnScreenshot" class="btn-gradient" style="background:linear-gradient(135deg,#0ea5e9 0%,#0369a1 100%);padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:white;font-weight:600;cursor:pointer;" title="Tirar print da tabela">📸 Print da Tabela</button>
+            <button id="btnAnalises" class="btn-gradient" style="background:#007C27;color:#F0F5CD;">📊 Gerar Análise Completa</button>
+            <button id="btnExportar" class="btn-gradient" style="background:#007C27;padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:#F0F5CD;font-weight:600;cursor:pointer;display:none" title="Exportar tabela em Excel">📥 Exportar Excel</button>
+            <button id="btnExpandir" class="btn-gradient" style="background:#007C27;padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:#F0F5CD;font-weight:600;cursor:pointer;display:none" title="Expandir tabela em tela cheia">⛶ Expandir Tabela</button>
+            <button id="btnScreenshot" class="btn-gradient" style="background:#007C27;padding:0.75rem 1.5rem;border-radius:0.5rem;border:none;color:#F0F5CD;font-weight:600;cursor:pointer;" title="Tirar print da tabela">📸 Print da Tabela</button>
           </div>
 
           <!-- ── BARRA DE OCULTAR COLUNAS ── -->
@@ -1037,9 +1039,9 @@
       const limiteAtual = limites[linhaP] || limites['vista'];
 
       function getCorPorLimite(valor, lim) {
-        if(valor <= lim[0]) return 'rgba(34,197,94,.15)';
-        if(valor <= lim[1]) return 'rgba(202,138,4,.15)';
-        return 'rgba(220,38,38,.15)';
+        if(valor <= lim[0]) return 'rgba(0,124,39,.18)';   // verde
+        if(valor <= lim[1]) return 'rgba(240,245,205,.8)';  // amarelo-claro
+        return 'rgba(0,40,24,.15)';                          // escuro (alerta)
       }
       const tbody = document.getElementById('tbodyAnalises');
       const btnExportar = document.getElementById('btnExportar');
@@ -1176,32 +1178,48 @@
       function aplicarStickyCol(){
         const table = document.querySelector('#analiseTable table');
         if(!table) return;
-        const FREEZE_UP_TO = 6; // 0=Faixa, 1=Valor Imóvel, 2=Valor Avaliação, 3=Bônus, 4=Renda, 5=Taxa, 6=Crédito CAIXA
+        const FREEZE_UP_TO = 6;
         const rows = table.querySelectorAll('tr');
 
-        // Calcular larguras reais de cada coluna pela primeira linha de dados (ou thead)
+        // Aplicar sticky-head a TODOS os th (cabeçalho sempre visível ao rolar verticalmente)
+        table.querySelectorAll('th').forEach(th => {
+          th.classList.add('col-sticky-head');
+        });
+
+        // Limpar bordas antigas de células congeladas
+        table.querySelectorAll('.col-sticky, .col-sticky-head').forEach(c => {
+          c.style.borderRight = '';
+          c.style.boxShadow = '';
+        });
+
         const refRow = table.querySelector('thead tr');
-        const widths = [];
-        if(refRow){
-          refRow.querySelectorAll('th').forEach(th => widths.push(th.offsetWidth));
-        }
+        const allThs = refRow ? Array.from(refRow.querySelectorAll('th')) : [];
+        const widths = allThs.map(th => th.offsetWidth);
 
         rows.forEach(row => {
-          const cells = row.querySelectorAll('th, td');
+          const cells = Array.from(row.querySelectorAll('th, td'));
           let offset = 0;
+          let lastVisibleFrozen = null;
+
           cells.forEach((cell, i) => {
+            const hidden = cell.classList.contains('col-hidden');
+
             if(i <= FREEZE_UP_TO){
               const isHead = cell.tagName === 'TH';
               cell.classList.add(isHead ? 'col-sticky-head' : 'col-sticky');
               cell.style.left = offset + 'px';
-              // Adicionar borda direita na última coluna congelada
-              if(i === FREEZE_UP_TO){
-                cell.style.borderRight = '2px solid rgba(0,124,39,.4)';
-                cell.style.boxShadow = '3px 0 8px rgba(0,0,0,.15)';
-              }
+              if(!hidden) lastVisibleFrozen = cell;
             }
-            offset += (widths[i] || cell.offsetWidth);
+
+            if(!hidden){
+              offset += (widths[i] || cell.offsetWidth);
+            }
           });
+
+          if(lastVisibleFrozen){
+            lastVisibleFrozen.style.borderRight = '2px solid rgba(0,124,39,.4)';
+            lastVisibleFrozen.style.boxShadow   = '3px 0 8px rgba(0,0,0,.15)';
+          }
         });
       }
 
@@ -1209,9 +1227,10 @@
       const _rodarAnalises = rodarAnalises;
       rodarAnalises = function(){
         _rodarAnalises();
+        // Ordem correta: 1) ocultar colunas, 2) recalcular sticky com larguras corretas
         requestAnimationFrame(() => {
-          requestAnimationFrame(aplicarStickyCol);
           reaplicarEstadoColunas();
+          requestAnimationFrame(aplicarStickyCol);
         });
       };
 
